@@ -10,7 +10,7 @@ export const fr: Dict = {
   'nav.settings': 'Réglages',
 
   'onboarding.title': 'Bienvenue sur Stakely',
-  'onboarding.subtitle': 'Le gestionnaire de bankroll intelligent pour parieurs sportifs. Gratuit, privé — tes données restent sur ton appareil.',
+  'onboarding.subtitle': 'Le gestionnaire de bankroll intelligent pour parieurs sportifs. Synchronisé en sécurité sur tous tes appareils.',
   'onboarding.f1': 'Enregistre un pari en quelques secondes — simples, combinés, live et cash out',
   'onboarding.f2': 'Vois où tu gagnes vraiment de l’argent : sport, marché, tranche de cotes',
   'onboarding.f3': 'Reste discipliné avec plans de mise, stop-loss et alertes tilt',
@@ -226,7 +226,7 @@ export const fr: Dict = {
   'landing.hero.title': 'Ta bankroll, en pilote automatique',
   'landing.hero.subtitle': 'Scanne ton ticket, et Stakeo le remplit, suit le résultat et le règle pour toi. Le gestionnaire de bankroll intelligent pour parieurs sportifs.',
   'landing.hero.cta': 'Commencer gratuitement',
-  'landing.hero.note': 'Aucun compte requis pour essayer · Gratuit · Tes données restent privées',
+  'landing.hero.note': 'Essai gratuit 14 jours · Sans carte bancaire · Données sécurisées',
   'landing.features.title': 'Tout ce que les autres te font faire à la main',
   'landing.f.scan.title': 'Saisie automatique',
   'landing.f.scan.desc': 'Scanne ou partage un ticket — l’IA lit la cote, la mise et les sélections et remplit le pari pour toi.',

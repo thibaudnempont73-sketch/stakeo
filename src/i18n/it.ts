@@ -10,7 +10,7 @@ export const it: Dict = {
   'nav.settings': 'Impostazioni',
 
   'onboarding.title': 'Benvenuto su Stakely',
-  'onboarding.subtitle': 'Il gestore di bankroll intelligente per scommettitori sportivi. Gratuito e privato: i tuoi dati restano sul tuo dispositivo.',
+  'onboarding.subtitle': 'Il gestore di bankroll intelligente per scommettitori sportivi. Sincronizzato in sicurezza su tutti i tuoi dispositivi.',
   'onboarding.f1': 'Registra una scommessa in pochi secondi: singole, multiple, live e cash out',
   'onboarding.f2': 'Scopri dove guadagni davvero: sport, mercato, fascia di quote',
   'onboarding.f3': 'Mantieni la disciplina con piani di puntata, stop-loss e avvisi tilt',
@@ -226,7 +226,7 @@ export const it: Dict = {
   'landing.hero.title': 'Il tuo bankroll, in pilota automatico',
   'landing.hero.subtitle': 'Scansiona la schedina e Stakeo la compila, segue il risultato e la chiude per te. Il gestore di bankroll intelligente per scommettitori sportivi.',
   'landing.hero.cta': 'Inizia gratis',
-  'landing.hero.note': 'Nessun account per provare · Gratis · I tuoi dati restano privati',
+  'landing.hero.note': 'Prova gratis 14 giorni · Senza carta · Dati sicuri',
   'landing.features.title': 'Tutto ciò che gli altri ti fanno fare a mano',
   'landing.f.scan.title': 'Inserimento automatico',
   'landing.f.scan.desc': 'Scansiona o condividi una schedina — l’IA legge quota, puntata e selezioni e compila la scommessa per te.',

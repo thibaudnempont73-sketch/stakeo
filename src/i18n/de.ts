@@ -10,7 +10,7 @@ export const de: Dict = {
   'nav.settings': 'Einstellungen',
 
   'onboarding.title': 'Willkommen bei Stakely',
-  'onboarding.subtitle': 'Der smarte Bankroll-Manager für Sportwetter. Kostenlos und privat — deine Daten bleiben auf deinem Gerät.',
+  'onboarding.subtitle': 'Der smarte Bankroll-Manager für Sportwetter. Sicher auf all deinen Geräten synchronisiert.',
   'onboarding.f1': 'Wetten in Sekunden erfassen — Einzel, Kombi, Live und Cash-out',
   'onboarding.f2': 'Sieh, womit du wirklich Geld verdienst: Sportart, Markt, Quotenbereich',
   'onboarding.f3': 'Bleib diszipliniert mit Einsatzplänen, Stop-Loss und Tilt-Warnungen',
@@ -226,7 +226,7 @@ export const de: Dict = {
   'landing.hero.title': 'Deine Bankroll, auf Autopilot',
   'landing.hero.subtitle': 'Scanne deinen Wettschein, und Stakeo trägt ihn ein, verfolgt das Ergebnis und rechnet ihn für dich ab. Der smarte Bankroll-Manager für Sportwetter.',
   'landing.hero.cta': 'Kostenlos starten',
-  'landing.hero.note': 'Kein Konto zum Testen · Kostenlos · Deine Daten bleiben privat',
+  'landing.hero.note': '14 Tage kostenlos testen · Ohne Karte · Sichere Daten',
   'landing.features.title': 'Alles, was dich die anderen von Hand machen lassen',
   'landing.f.scan.title': 'Automatische Erfassung',
   'landing.f.scan.desc': 'Scanne oder teile einen Wettschein — die KI liest Quote, Einsatz und Auswahlen und trägt die Wette für dich ein.',

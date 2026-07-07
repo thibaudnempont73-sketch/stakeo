@@ -9,7 +9,7 @@ export const en = {
   'nav.settings': 'Settings',
 
   'onboarding.title': 'Welcome to Stakely',
-  'onboarding.subtitle': 'The smart bankroll manager for sports bettors. Free, private — your data stays on your device.',
+  'onboarding.subtitle': 'The smart bankroll manager for sports bettors. Synced securely across all your devices.',
   'onboarding.f1': 'Log a bet in seconds — singles, combos, live and cash out',
   'onboarding.f2': 'See where you really make money: sport, market, odds range',
   'onboarding.f3': 'Stay disciplined with staking plans, stop-loss and tilt alerts',
@@ -225,7 +225,7 @@ export const en = {
   'landing.hero.title': 'Your bankroll, on autopilot',
   'landing.hero.subtitle': 'Scan your bet slip, and Stakeo fills it in, tracks the result and settles it for you. The smart bankroll manager for sports bettors.',
   'landing.hero.cta': 'Start free',
-  'landing.hero.note': 'No account needed to try · Free · Your data stays private',
+  'landing.hero.note': 'Free 14-day trial · No card required · Secure and synced',
   'landing.features.title': 'Everything the others make you do by hand',
   'landing.f.scan.title': 'Automatic entry',
   'landing.f.scan.desc': 'Scan or share a bet slip — the AI reads the odds, stake and selections and fills the bet in for you.',

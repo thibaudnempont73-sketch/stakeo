@@ -144,6 +144,16 @@ function Shell() {
         </button>
       </aside>
 
+      <header className="app-topbar">
+        <Link to="/" className="app-topbar-logo" aria-label={t('landing.backToSite')}>
+          <img src="/icon.svg" width="26" height="26" alt="" />
+          <span>{t('app.name')}</span>
+        </Link>
+        <button className="icon-btn" onClick={() => signOut()} aria-label={t('auth.signOut')}>
+          <Icon name="logout" size={19} />
+        </button>
+      </header>
+
       <main className="content">
         {tab === 'dashboard' && <Dashboard />}
         {tab === 'bets' && <Bets />}

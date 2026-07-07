@@ -10,7 +10,7 @@ export const pt: Dict = {
   'nav.settings': 'Definições',
 
   'onboarding.title': 'Bem-vindo ao Stakely',
-  'onboarding.subtitle': 'O gestor de banca inteligente para apostadores desportivos. Gratuito e privado — os teus dados ficam no teu dispositivo.',
+  'onboarding.subtitle': 'O gestor de banca inteligente para apostadores desportivos. Sincronizado com segurança em todos os teus dispositivos.',
   'onboarding.f1': 'Regista uma aposta em segundos — simples, múltiplas, live e cash out',
   'onboarding.f2': 'Descobre onde ganhas dinheiro de verdade: desporto, mercado, faixa de odds',
   'onboarding.f3': 'Mantém a disciplina com planos de aposta, stop-loss e alertas de tilt',
@@ -226,7 +226,7 @@ export const pt: Dict = {
   'landing.hero.title': 'A tua banca, em piloto automático',
   'landing.hero.subtitle': 'Digitaliza o teu talão e o Stakeo preenche-o, acompanha o resultado e fecha-o por ti. O gestor de banca inteligente para apostadores desportivos.',
   'landing.hero.cta': 'Começar grátis',
-  'landing.hero.note': 'Sem conta para experimentar · Grátis · Os teus dados ficam privados',
+  'landing.hero.note': 'Teste grátis 14 dias · Sem cartão · Dados seguros',
   'landing.features.title': 'Tudo o que os outros te obrigam a fazer à mão',
   'landing.f.scan.title': 'Registo automático',
   'landing.f.scan.desc': 'Digitaliza ou partilha um talão — a IA lê a odd, o valor e as seleções e preenche a aposta por ti.',
