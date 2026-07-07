@@ -95,7 +95,7 @@ Clés API : secrets serveur (Supabase / GitHub Actions), jamais dans le navigate
   - Baseball → MLB Stats API · Hockey → NHL API · Basket → NBA stats
   - Foot → football-data.org (majeurs) + API-Football (granulaire) + OpenLigaDB (Allemagne)
   - Large → ESPN hidden API (filet) · F1 → Jolpica-F1
-- [ ] **Moteur de règlement par marché** (en code) : marchés simples partout + exotiques là où la donnée existe (corners, cartons, buteurs, props joueurs).
+- [x] **Moteur de règlement par marché** (`src/lib/settle.ts`) ✅ — agnostique de l'API (lit un `MatchResult` normalisé). Gère 1N2, double chance, draw no bet, plus/moins (total), BTTS, handicap ; parsing multilingue des libellés de marché (FR/EN + ES/DE/IT/PT partiels) ; marchés non reconnus → `unknown`. 31/31 tests OK. Exotiques (corners/cartons/buteurs) à ajouter quand les adaptateurs fournissent les stats.
 - [ ] **Fallback Gemini + Google Search** : pour la queue non couverte publiquement rapportée ; caché par (match, marché) ; filtre de confiance.
 - [ ] **Cron GitHub Actions** (toutes les ~20-30 min) :
   - liste de travail = matchs distincts avec ≥1 pari en cours **et** fin prévue dépassée **et** absents du cache
