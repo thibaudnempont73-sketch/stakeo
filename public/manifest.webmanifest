@@ -1,0 +1,20 @@
+{
+  "name": "Stakeo — Bankroll manager",
+  "short_name": "Stakeo",
+  "description": "Smart bankroll management for sports bettors",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0E16",
+  "theme_color": "#0A0E16",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [{ "name": "image", "accept": ["image/*"] }]
+    }
+  }
+}
