@@ -219,6 +219,10 @@ export const pt: Dict = {
   'common.yesterday': 'Ontem',
 
   'landing.openApp': 'Abrir a app',
+  'landing.login': 'Entrar',
+  'landing.signup': 'Registar',
+  'landing.backToSite': 'Voltar ao início',
+  'landing.hero.pill': 'Registo de apostas, automatizado',
   'landing.hero.title': 'A tua banca, em piloto automático',
   'landing.hero.subtitle': 'Digitaliza o teu talão e o Stakeo preenche-o, acompanha o resultado e fecha-o por ti. O gestor de banca inteligente para apostadores desportivos.',
   'landing.hero.cta': 'Começar grátis',

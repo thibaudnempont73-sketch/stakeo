@@ -30,6 +30,8 @@ jobs:
           # Settings → Secrets and variables → Actions → Variables
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      # SPA fallback: serve the app for deep links like /app on refresh.
+      - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

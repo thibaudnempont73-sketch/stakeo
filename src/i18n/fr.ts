@@ -219,6 +219,10 @@ export const fr: Dict = {
   'common.yesterday': 'Hier',
 
   'landing.openApp': 'Ouvrir l’app',
+  'landing.login': 'Se connecter',
+  'landing.signup': 'S’inscrire',
+  'landing.backToSite': 'Retour à l’accueil',
+  'landing.hero.pill': 'Le suivi de paris, automatisé',
   'landing.hero.title': 'Ta bankroll, en pilote automatique',
   'landing.hero.subtitle': 'Scanne ton ticket, et Stakeo le remplit, suit le résultat et le règle pour toi. Le gestionnaire de bankroll intelligent pour parieurs sportifs.',
   'landing.hero.cta': 'Commencer gratuitement',

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
 import { useStore } from './store'
 import { useUI, type Tab } from './hooks'
 import { useAuth, isSupabaseConfigured } from './auth'
@@ -17,14 +18,9 @@ import { Icon } from './components/Icon'
 
 export default function App() {
   const settings = useStore((s) => s.settings)
-  const hasBankroll = useStore((s) => s.bankrolls.length > 0)
   const i18n = useMemo(() => ({ t: makeT(settings.language), lang: settings.language }), [settings.language])
-
-  const session = useAuth((s) => s.session)
-  const ready = useAuth((s) => s.ready)
   const init = useAuth((s) => s.init)
   const user = useAuth((s) => s.user)
-  const [showAuth, setShowAuth] = useState(false)
   const prevUserId = useRef<string | null>(null)
 
   useEffect(() => {
@@ -49,22 +45,53 @@ export default function App() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', settings.theme === 'dark' ? '#0A0E15' : '#F4F6FA')
   }, [settings.theme, settings.language])
 
-  // Reset the transient auth-screen flag once a session lands.
+  return (
+    <I18nContext.Provider value={i18n}>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </I18nContext.Provider>
+  )
+}
+
+function AppRoutes() {
+  const ready = useAuth((s) => s.ready)
+  const session = useAuth((s) => s.session)
+  const hasBankroll = useStore((s) => s.bankrolls.length > 0)
+  const authed = !isSupabaseConfigured || !!session
+  const navigate = useNavigate()
+  const setScanBlob = useUI((s) => s.setScanBlob)
+  const openForm = useUI((s) => s.openForm)
+
+  // Web Share Target (Android): a shared image lands at /?shared=1 → open the app + scan.
   useEffect(() => {
-    if (session) setShowAuth(false)
-  }, [session])
+    if (!window.location.search.includes('shared=1') || !('caches' in window)) return
+    caches
+      .open('stakeo-share')
+      .then(async (cache) => {
+        const res = await cache.match('/shared-image')
+        navigate('/app', { replace: true })
+        if (!res) return
+        const blob = await res.blob()
+        await cache.delete('/shared-image')
+        setScanBlob(blob)
+        openForm()
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  let view: React.ReactNode
-  if (!ready) {
-    view = <Splash />
-  } else if (isSupabaseConfigured && !session) {
-    // SaaS gating: no access without a verified account.
-    view = showAuth ? <Auth onBack={() => setShowAuth(false)} /> : <Landing onEnter={() => setShowAuth(true)} />
-  } else {
-    view = hasBankroll ? <Shell /> : <Onboarding />
-  }
+  if (!ready) return <Splash />
 
-  return <I18nContext.Provider value={i18n}>{view}</I18nContext.Provider>
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={authed ? <Navigate to="/app" replace /> : <Auth mode="signin" />} />
+      <Route path="/signup" element={authed ? <Navigate to="/app" replace /> : <Auth mode="signup" />} />
+      <Route path="/app/*" element={authed ? hasBankroll ? <Shell /> : <Onboarding /> : <Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
 }
 
 function Splash() {
@@ -84,24 +111,7 @@ function Shell() {
   const formOpen = useUI((s) => s.formOpen)
   const editingId = useUI((s) => s.editingId)
   const detailId = useUI((s) => s.detailId)
-  const setScanBlob = useUI((s) => s.setScanBlob)
-
-  useEffect(() => {
-    if (!window.location.search.includes('shared=1') || !('caches' in window)) return
-    window.history.replaceState(null, '', '/')
-    caches
-      .open('stakeo-share')
-      .then(async (cache) => {
-        const res = await cache.match('/shared-image')
-        if (!res) return
-        const blob = await res.blob()
-        await cache.delete('/shared-image')
-        setScanBlob(blob)
-        openForm()
-      })
-      .catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const signOut = useAuth((s) => s.signOut)
 
   const navItems: { tab: Tab; icon: string; label: string }[] = [
     { tab: 'dashboard', icon: 'home', label: t('nav.dashboard') },
@@ -120,14 +130,18 @@ function Shell() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="sidebar-logo">
+        <Link to="/" className="sidebar-logo" title={t('landing.backToSite')}>
           <img src="/icon.svg" width="30" height="30" alt="" />
           <span>{t('app.name')}</span>
-        </div>
+        </Link>
         <button className="btn btn-primary sidebar-add" onClick={() => openForm()}>
           <Icon name="plus" size={16} /> {t('nav.add')}
         </button>
         <nav>{navItems.map(navBtn)}</nav>
+        <button className="sidebar-signout" onClick={() => signOut()}>
+          <Icon name="logout" size={19} />
+          <span>{t('auth.signOut')}</span>
+        </button>
       </aside>
 
       <main className="content">

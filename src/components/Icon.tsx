@@ -35,6 +35,7 @@ const paths: Record<string, string> = {
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0',
   mail: 'M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm0 1.5 8 5.5 8-5.5',
   refresh: 'M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4',
+  logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
 }
 
 export function Icon({ name, size = 20, className }: { name: string; size?: number; className?: string }) {

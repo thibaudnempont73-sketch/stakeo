@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useI18n, LANGUAGES } from '../i18n'
 import { useStore } from '../store'
 import { supabase } from '../lib/supabase'
@@ -10,11 +11,12 @@ type Mode = 'signin' | 'signup' | 'reset'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export function Auth({ onBack }: { onBack: () => void }) {
+export function Auth({ mode: initialMode }: { mode: 'signin' | 'signup' }) {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const settings = useStore((s) => s.settings)
   const updateSettings = useStore((s) => s.updateSettings)
-  const [mode, setMode] = useState<Mode>('signup')
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -81,7 +83,7 @@ export function Auth({ onBack }: { onBack: () => void }) {
   return (
     <div className="auth-page">
       <header className="auth-top">
-        <button className="link-btn" onClick={onBack}>
+        <button className="link-btn" onClick={() => navigate('/')}>
           <Icon name="arrowLeft" size={16} /> {t('auth.back')}
         </button>
         <select

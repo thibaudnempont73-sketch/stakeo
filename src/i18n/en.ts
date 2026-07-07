@@ -218,6 +218,10 @@ export const en = {
   'common.yesterday': 'Yesterday',
 
   'landing.openApp': 'Open the app',
+  'landing.login': 'Log in',
+  'landing.signup': 'Sign up',
+  'landing.backToSite': 'Back to homepage',
+  'landing.hero.pill': 'Bet tracking, automated',
   'landing.hero.title': 'Your bankroll, on autopilot',
   'landing.hero.subtitle': 'Scan your bet slip, and Stakeo fills it in, tracks the result and settles it for you. The smart bankroll manager for sports bettors.',
   'landing.hero.cta': 'Start free',

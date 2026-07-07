@@ -82,7 +82,7 @@ Clés API : secrets serveur (Supabase / GitHub Actions), jamais dans le navigate
 - [x] **Champ clé API utilisateur retiré** ✅ — la clé Gemini est côté app (`.env` en dev, proxy serveur en prod). L'utilisateur ne voit plus rien. Section « Tes données » nettoyée (import supprimé, texte cloud).
 - ⚠️ **L'abonnement Stripe est déplacé tout à la fin → voir « Phase FINALE ».**
 - [ ] **Migration du stockage** local → Supabase (cache offline + synchro ; import auto des données locales existantes).
-- [ ] Déploiement du front sur l'hébergeur choisi.
+- [x] **Déploiement sur stakeo.app** ✅ **EN LIGNE** — dépôt GitHub (thibaudnempont73-sketch/stakeo), GitHub Actions + Pages, DNS OVH OK (« DNS valid for primary »), HTTPS activé. Site servi et confirmé. Reste optionnel : CNAME `www`, et ajouter `https://stakeo.app` aux URLs de redirection Supabase (pour les liens e-mail en prod).
 
 > Note : le champ « Clé API Gemini » actuel dans Réglages est **temporaire (dev/test)** — il disparaît dès que les clés passent côté serveur ici.
 

@@ -219,6 +219,10 @@ export const it: Dict = {
   'common.yesterday': 'Ieri',
 
   'landing.openApp': 'Apri l’app',
+  'landing.login': 'Accedi',
+  'landing.signup': 'Registrati',
+  'landing.backToSite': 'Torna alla home',
+  'landing.hero.pill': 'Tracciamento scommesse, automatico',
   'landing.hero.title': 'Il tuo bankroll, in pilota automatico',
   'landing.hero.subtitle': 'Scansiona la schedina e Stakeo la compila, segue il risultato e la chiude per te. Il gestore di bankroll intelligente per scommettitori sportivi.',
   'landing.hero.cta': 'Inizia gratis',

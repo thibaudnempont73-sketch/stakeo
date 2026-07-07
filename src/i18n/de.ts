@@ -219,6 +219,10 @@ export const de: Dict = {
   'common.yesterday': 'Gestern',
 
   'landing.openApp': 'App öffnen',
+  'landing.login': 'Anmelden',
+  'landing.signup': 'Registrieren',
+  'landing.backToSite': 'Zur Startseite',
+  'landing.hero.pill': 'Wetten-Tracking, automatisiert',
   'landing.hero.title': 'Deine Bankroll, auf Autopilot',
   'landing.hero.subtitle': 'Scanne deinen Wettschein, und Stakeo trägt ihn ein, verfolgt das Ergebnis und rechnet ihn für dich ab. Der smarte Bankroll-Manager für Sportwetter.',
   'landing.hero.cta': 'Kostenlos starten',

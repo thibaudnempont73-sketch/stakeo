@@ -1,17 +1,23 @@
+import { Link, useNavigate } from 'react-router-dom'
 import { useI18n, LANGUAGES } from '../i18n'
 import { useStore } from '../store'
+import { useAuth } from '../auth'
 import { Icon } from '../components/Icon'
 
-export function Landing({ onEnter }: { onEnter: () => void }) {
+export function Landing() {
   const { t } = useI18n()
   const settings = useStore((s) => s.settings)
   const updateSettings = useStore((s) => s.updateSettings)
+  const session = useAuth((s) => s.session)
+  const signOut = useAuth((s) => s.signOut)
+  const navigate = useNavigate()
+  const loggedIn = !!session
 
   const features = [
-    { icon: 'bolt', key: 'scan' },
-    { icon: 'check', key: 'settle' },
-    { icon: 'chart', key: 'analytics' },
-    { icon: 'shield', key: 'discipline' },
+    { icon: 'bolt', key: 'scan', tone: 'accent' },
+    { icon: 'check', key: 'settle', tone: 'pos' },
+    { icon: 'chart', key: 'analytics', tone: 'blue' },
+    { icon: 'shield', key: 'discipline', tone: 'purple' },
   ] as const
 
   const steps = [
@@ -20,8 +26,12 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
     { icon: 'trendUp', key: 's3' },
   ] as const
 
+  const primaryCta = () => navigate(loggedIn ? '/app' : '/signup')
+
   return (
     <div className="landing">
+      <div className="lp-glow" aria-hidden="true" />
+
       <header className="lp-nav">
         <div className="lp-logo">
           <img src="/icon.svg" width="30" height="30" alt="" />
@@ -40,22 +50,42 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
               </option>
             ))}
           </select>
-          <button className="btn btn-sm" onClick={onEnter}>
-            {t('landing.openApp')}
-          </button>
+          {loggedIn ? (
+            <>
+              <button className="btn btn-sm lp-ghost" onClick={() => signOut()}>
+                {t('auth.signOut')}
+              </button>
+              <Link className="btn btn-sm btn-primary" to="/app">
+                {t('landing.openApp')}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link className="btn btn-sm lp-ghost" to="/login">
+                {t('landing.login')}
+              </Link>
+              <Link className="btn btn-sm btn-primary" to="/signup">
+                {t('landing.signup')}
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
       <section className="lp-hero">
-        <div className="lp-logo-badge">
-          <img src="/icon.svg" width="72" height="72" alt="" />
-        </div>
+        <span className="lp-pill">
+          <Icon name="sparkles" size={14} /> {t('landing.hero.pill')}
+        </span>
         <h1>{t('landing.hero.title')}</h1>
         <p className="lp-sub">{t('landing.hero.subtitle')}</p>
-        <button className="btn btn-primary btn-lg lp-cta" onClick={onEnter}>
-          {t('landing.hero.cta')} <Icon name="chevronRight" size={18} />
-        </button>
+        <div className="lp-hero-cta">
+          <button className="btn btn-primary btn-lg lp-cta" onClick={primaryCta}>
+            {loggedIn ? t('landing.openApp') : t('landing.hero.cta')} <Icon name="chevronRight" size={18} />
+          </button>
+        </div>
         <p className="lp-note">{t('landing.hero.note')}</p>
+
+        <LandingPreview />
       </section>
 
       <section className="lp-features">
@@ -63,7 +93,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
         <div className="lp-feature-grid">
           {features.map((f) => (
             <div key={f.key} className="lp-feature">
-              <div className="lp-feature-icon">
+              <div className={`lp-feature-icon tone-${f.tone}`}>
                 <Icon name={f.icon} size={22} />
               </div>
               <h3>{t(`landing.f.${f.key}.title` as 'landing.f.scan.title')}</h3>
@@ -88,10 +118,12 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       </section>
 
       <section className="lp-final">
-        <h2>{t('landing.cta.title')}</h2>
-        <button className="btn btn-primary btn-lg lp-cta" onClick={onEnter}>
-          {t('landing.hero.cta')} <Icon name="chevronRight" size={18} />
-        </button>
+        <div className="lp-final-card">
+          <h2>{t('landing.cta.title')}</h2>
+          <button className="btn btn-primary btn-lg lp-cta" onClick={primaryCta}>
+            {loggedIn ? t('landing.openApp') : t('landing.hero.cta')} <Icon name="chevronRight" size={18} />
+          </button>
+        </div>
       </section>
 
       <footer className="lp-footer">
@@ -101,6 +133,54 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
         </div>
         <p>{t('landing.footer.disclaimer')}</p>
       </footer>
+    </div>
+  )
+}
+
+// A small stylized preview of the dashboard — pure CSS/markup, no data.
+function LandingPreview() {
+  const { t } = useI18n()
+  return (
+    <div className="lp-preview" aria-hidden="true">
+      <div className="lp-preview-top">
+        <div>
+          <span className="lp-preview-label">{t('dash.balance')}</span>
+          <span className="lp-preview-balance">1 247,50 €</span>
+        </div>
+        <span className="lp-preview-badge">
+          <Icon name="trendUp" size={13} /> +12,4 %
+        </span>
+      </div>
+      <svg className="lp-preview-chart" viewBox="0 0 300 70" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="lpg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="M0,55 L40,50 L80,58 L120,42 L160,46 L200,30 L240,34 L300,10 L300,70 L0,70 Z" fill="url(#lpg)" />
+        <path
+          d="M0,55 L40,50 L80,58 L120,42 L160,46 L200,30 L240,34 L300,10"
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="lp-preview-stats">
+        <div>
+          <span>{t('dash.profit')}</span>
+          <strong className="pos">+247,50 €</strong>
+        </div>
+        <div>
+          <span>{t('dash.yield')}</span>
+          <strong className="pos">+8,2 %</strong>
+        </div>
+        <div>
+          <span>{t('dash.winRate')}</span>
+          <strong>58 %</strong>
+        </div>
+      </div>
     </div>
   )
 }
