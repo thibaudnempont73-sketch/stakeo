@@ -13,12 +13,27 @@ export interface MatchResult {
   homeScore: number
   awayScore: number
   status: 'finished' | 'postponed' | 'cancelled' | 'in_progress' | 'unknown'
+  halfTime?: { home: number; away: number }
   // Optional richer data for exotic markets (filled by adapters when available).
   homeCorners?: number
   awayCorners?: number
   homeCards?: number
   awayCards?: number
   bothTeamsScored?: boolean
+  scorers?: string[] // players who scored, in chronological order
+  // Per-player stats keyed by player name (goals, shots on target, assists, cards…).
+  players?: Record<string, PlayerStats>
+}
+
+export interface PlayerStats {
+  goals?: number
+  assists?: number
+  shots?: number
+  shotsOnTarget?: number
+  cards?: number
+  points?: number
+  rebounds?: number
+  assistsNba?: number
 }
 
 // ── text helpers ─────────────────────────────────────────────
@@ -60,19 +75,26 @@ const KW = {
   win: ['victoire', 'vainqueur', 'gagne', 'wins', 'win', 'winner', 'gana', 'sieg', 'gewinnt', 'vince', 'vitoria', 'vitória', 'vence'],
   doubleChance: ['double chance', 'doppia chance', 'doble oportunidad', 'doppelte chance', 'dupla hipotese'],
   goals: ['but', 'buts', 'goal', 'goals', 'gol', 'goles', 'tore', 'reti', 'golos'],
+  corners: ['corner', 'corners', 'coup de pied de coin', 'saque de esquina', 'ecke', 'calcio d angolo', 'pontape de canto'],
+  cards: ['carton', 'cartons', 'card', 'cards', 'carte', 'tarjeta', 'tarjetas', 'karte', 'karten', 'cartellino', 'cartao', 'cartão'],
+  scorer: ['buteur', 'to score', 'goalscorer', 'goal scorer', 'anytime scorer', 'goleador', 'anotador', 'torschutze', 'torschütze', 'marcatore', 'marcador'],
+  first: ['premier', 'first', '1er', 'primer', 'erster', 'primo', 'primeiro'],
 }
 
 const isFinal = (r: MatchResult) => r.status === 'finished'
 
 // ── market spec ─────────────────────────────────────────────
 
+type Metric = 'goals' | 'corners' | 'cards'
+
 type Spec =
   | { kind: '1x2'; pick: 'home' | 'draw' | 'away' }
   | { kind: 'doubleChance'; picks: Array<'home' | 'draw' | 'away'> }
   | { kind: 'dnb'; pick: 'home' | 'away' }
-  | { kind: 'overUnder'; side: 'over' | 'under'; line: number }
+  | { kind: 'overUnder'; side: 'over' | 'under'; line: number; metric: Metric }
   | { kind: 'btts'; yes: boolean }
   | { kind: 'handicap'; side: 'home' | 'away'; line: number }
+  | { kind: 'scorer'; player: string; first: boolean }
 
 /** Parse a free-text market/selection into a structured spec, or null if unknown. */
 export function parseMarket(market: string, home: string, away: string): Spec | null {
@@ -83,6 +105,15 @@ export function parseMarket(market: string, home: string, away: string): Spec | 
   if (includesAny(m, ['btts', 'les deux marquent', 'both teams', 'ambos marcan', 'beide treffen', 'entrambe segnano', 'ambas marcam'])) {
     const no = KW.bttsNo.some((n) => new RegExp(`\\b${n}\\b`).test(m))
     return { kind: 'btts', yes: !no }
+  }
+
+  // Goalscorer ("Mbappé buteur", "Mbappé to score", "1er buteur : Mbappé")
+  if (includesAny(m, KW.scorer)) {
+    const first = includesAny(m, KW.first)
+    let player = market
+    for (const k of [...KW.scorer, ...KW.first]) player = player.replace(new RegExp(k, 'gi'), ' ')
+    player = player.replace(/anytime|[:·.-]/gi, ' ').replace(/\s+/g, ' ').trim()
+    if (player) return { kind: 'scorer', player, first }
   }
 
   // Double chance (1X / X2 / 12 or worded)
@@ -100,12 +131,13 @@ export function parseMarket(market: string, home: string, away: string): Spec | 
     if (s) return { kind: 'dnb', pick: s }
   }
 
-  // Over / Under total (needs a number)
+  // Over / Under (goals / points by default, or corners / cards if named)
   if (includesAny(m, KW.over) || includesAny(m, KW.under)) {
     const line = extractLine(m)
     if (line != null) {
-      const side: 'over' | 'under' = includesAny(m, KW.over) && !includesAny(m, KW.under) ? 'over' : includesAny(m, KW.under) ? 'under' : 'over'
-      return { kind: 'overUnder', side, line }
+      const side: 'over' | 'under' = includesAny(m, KW.under) && !includesAny(m, KW.over) ? 'under' : 'over'
+      const metric: Metric = includesAny(m, KW.corners) ? 'corners' : includesAny(m, KW.cards) ? 'cards' : 'goals'
+      return { kind: 'overUnder', side, line, metric }
     }
   }
 
@@ -164,15 +196,34 @@ function settleSpec(spec: Spec, r: MatchResult): Outcome {
       const btts = r.bothTeamsScored ?? (h > 0 && a > 0)
       return btts === spec.yes ? 'won' : 'lost'
     }
-    case 'overUnder':
-      if (total === spec.line) return 'void' // integer line push
-      return (total > spec.line) === (spec.side === 'over') ? 'won' : 'lost'
+    case 'overUnder': {
+      let metricTotal: number | null = total
+      if (spec.metric === 'corners') {
+        metricTotal = r.homeCorners != null && r.awayCorners != null ? r.homeCorners + r.awayCorners : null
+      } else if (spec.metric === 'cards') {
+        metricTotal = r.homeCards != null && r.awayCards != null ? r.homeCards + r.awayCards : null
+      }
+      if (metricTotal == null) return 'unknown' // stat not available from the source
+      if (metricTotal === spec.line) return 'void' // integer line push
+      return (metricTotal > spec.line) === (spec.side === 'over') ? 'won' : 'lost'
+    }
     case 'handicap': {
       const my = (spec.side === 'home' ? h : a) + spec.line
       const other = spec.side === 'home' ? a : h
       if (my > other) return 'won'
       if (my < other) return 'lost'
       return 'void'
+    }
+    case 'scorer': {
+      if (!r.scorers) return 'unknown' // scorer data not available
+      const target = norm(spec.player)
+      if (!target) return 'unknown'
+      const hit = (name: string) => {
+        const n = norm(name)
+        return n === target || n.includes(target) || target.includes(n)
+      }
+      if (spec.first) return r.scorers[0] && hit(r.scorers[0]) ? 'won' : 'lost'
+      return r.scorers.some(hit) ? 'won' : 'lost'
     }
   }
 }
