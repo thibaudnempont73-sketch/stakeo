@@ -91,10 +91,9 @@ Clés API : secrets serveur (Supabase / GitHub Actions), jamais dans le navigate
 ## Phase 2 — Règlement automatique ciblé (le cœur)
 
 - [ ] **Rattachement pari → match canonique** : normalisation des noms (langues/orthographes bookmakers) + Gemini en renfort, mapping mis en cache.
-- [ ] **Adaptateurs par sport** (chacun écrit dans le cache `results`, format normalisé) :
-  - Baseball → MLB Stats API · Hockey → NHL API · Basket → NBA stats
-  - Foot → football-data.org (majeurs) + API-Football (granulaire) + OpenLigaDB (Allemagne)
-  - Large → ESPN hidden API (filet) · F1 → Jolpica-F1
+- [~] **Adaptateurs par sport** (chacun écrit dans le cache `results`, format normalisé) :
+  - [x] **ESPN (sans clé)** — `worker/adapters/espn.ts` : NBA/NFL/MLB/NHL/foot, scores → `MatchResult`, + `matchFixture()`. **Prouvé de bout en bout** sur le vrai combiné Winamax de l'utilisateur (`worker/demo-settle.ts` : 2 sélections NBA réglées → combiné gagné, 28,50€). Filet multi-sport pour les marchés simples.
+  - [ ] API-Football (foot, exotiques : corners/cartons/buteurs/stats joueurs) · MLB Stats API · NHL API · Jolpica-F1
 - [x] **Moteur de règlement par marché** (`src/lib/settle.ts`) ✅ — agnostique de l'API (lit un `MatchResult` normalisé). **Marchés simples ET exotiques** : 1N2, double chance, draw no bet, plus/moins (buts/points, corners, cartons), BTTS, handicap, buteur (à tout moment + premier). Parsing multilingue ; si la stat exotique n'est pas fournie → `unknown` (jamais réglé au hasard). Tests OK. Le `MatchResult` porte des champs optionnels (corners, cards, scorers, players) que les adaptateurs remplissent quand l'API les donne.
 - [ ] **Fallback Gemini + Google Search** : pour la queue non couverte publiquement rapportée ; caché par (match, marché) ; filtre de confiance.
 - [ ] **Cron GitHub Actions** (toutes les ~20-30 min) :
