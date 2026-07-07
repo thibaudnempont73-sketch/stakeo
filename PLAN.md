@@ -96,10 +96,7 @@ Clés API : secrets serveur (Supabase / GitHub Actions), jamais dans le navigate
   - [ ] API-Football (foot, exotiques : corners/cartons/buteurs/stats joueurs) · MLB Stats API · NHL API · Jolpica-F1
 - [x] **Moteur de règlement par marché** (`src/lib/settle.ts`) ✅ — agnostique de l'API (lit un `MatchResult` normalisé). **Marchés simples ET exotiques** : 1N2, double chance, draw no bet, plus/moins (buts/points, corners, cartons), BTTS, handicap, buteur (à tout moment + premier). Parsing multilingue ; si la stat exotique n'est pas fournie → `unknown` (jamais réglé au hasard). Tests OK. Le `MatchResult` porte des champs optionnels (corners, cards, scorers, players) que les adaptateurs remplissent quand l'API les donne.
 - [ ] **Fallback Gemini + Google Search** : pour la queue non couverte publiquement rapportée ; caché par (match, marché) ; filtre de confiance.
-- [ ] **Cron GitHub Actions** (toutes les ~20-30 min) :
-  - liste de travail = matchs distincts avec ≥1 pari en cours **et** fin prévue dépassée **et** absents du cache
-  - 1 appel par match (regroupé par ligue/journée) → règle tous les parieurs
-  - si pas fini → réessai ; plafond (~6h) → « à confirmer »
+- [x] **Cron GitHub Actions** (`worker/settle.ts` + `.github/workflows/settle.yml`, toutes les 30 min) ✅ — lit les paris en cours (service_role, hors RLS), attend ~3,5h après le coup d'envoi, dédoublonne les appels ESPN par (sport, date ±1 j) dans le run, règle avec le moteur, met à jour le statut. Validé end-to-end (connexion Supabase + worker OK). **v1 : paris simples, sports ESPN (NBA/NFL/MLB/NHL/foot majeurs), marchés simples.** À venir : combinés (modèle par sélection), exotiques via API-Football, fallback Gemini, cache `results` inter-run.
 - [ ] **Règlement à l'ouverture de l'app** depuis le cache (instantané, gratuit).
 - [ ] Le bouton « Vérifier » disparaît → tout devient automatique.
 
