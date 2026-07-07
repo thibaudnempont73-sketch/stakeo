@@ -5,15 +5,25 @@
 // Run: SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… npx tsx worker/settle.ts
 import { createClient } from '@supabase/supabase-js'
 import { fetchEspn, matchFixture, ESPN_SPORT } from './adapters/espn'
-import { settleMarket, type MatchResult } from '../src/lib/settle'
+import { settleMarket, type MatchResult, type Outcome } from '../src/lib/settle'
+import { resolveViaGemini, type GeminiVerdict } from './gemini'
 
 const URL = process.env.SUPABASE_URL
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const GEMINI_KEY = process.env.GEMINI_API_KEY || ''
 if (!URL || !KEY) {
   console.error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
 }
 const sb = createClient(URL, KEY, { auth: { persistSession: false } })
+
+// One Gemini call per distinct bet signature per run (dedupe across users).
+const geminiCache = new Map<string, Promise<GeminiVerdict>>()
+function resolveGemini(bet: any): Promise<GeminiVerdict> {
+  const sig = `${bet.type}|${bet.sport}|${bet.event}|${bet.market}|${(bet.legs ?? []).map((l: any) => l.selection).join(',')}`
+  if (!geminiCache.has(sig)) geminiCache.set(sig, resolveViaGemini(GEMINI_KEY, bet).catch(() => ({ status: 'unknown', confidence: 'low' }) as GeminiVerdict))
+  return geminiCache.get(sig)!
+}
 
 const SETTLE_AFTER_MS = 3.5 * 3600 * 1000 // wait ~3.5h after kickoff (match is over)
 const MAX_AGE_MS = 14 * 24 * 3600 * 1000 // stop chasing bets older than 14 days
@@ -55,34 +65,39 @@ async function main() {
 
   let settled = 0
   let skipped = 0
+  let viaGemini = 0
   for (const bet of pending) {
     const kickoff = new Date(bet.date).getTime()
     if (isNaN(kickoff) || now - kickoff < SETTLE_AFTER_MS || now - kickoff > MAX_AGE_MS) {
       skipped++
       continue
     }
-    if (bet.type === 'combo') {
-      // Combos need a per-leg event/market model — handled in a later version.
-      skipped++
-      continue
-    }
-    if (!ESPN_SPORT[bet.sport]) {
-      skipped++
-      continue
-    }
 
     try {
-      const results = await resultsForBet(bet.sport, bet.date)
-      const fixture = matchFixture(bet.event || '', results)
-      if (!fixture || fixture.status !== 'finished') {
-        skipped++
-        continue
+      let outcome: Outcome = 'unknown'
+      let via = 'engine'
+
+      // 1. Free path: engine + ESPN adapter (single bets, ESPN-covered sports).
+      if (bet.type !== 'combo' && ESPN_SPORT[bet.sport]) {
+        const results = await resultsForBet(bet.sport, bet.date)
+        const fixture = matchFixture(bet.event || '', results)
+        if (fixture && fixture.status === 'finished') outcome = settleMarket(bet.market || '', fixture)
       }
-      const outcome = settleMarket(bet.market || '', fixture)
+
+      // 2. Gemini fallback: combos, uncovered sports, unrecognized/exotic markets.
+      if (outcome === 'unknown' && GEMINI_KEY) {
+        const v = await resolveGemini(bet)
+        if (v.status !== 'unknown' && v.confidence !== 'low') {
+          outcome = v.status
+          via = 'gemini'
+        }
+      }
+
       if (outcome === 'unknown') {
         skipped++
         continue
       }
+
       const { error: upErr } = await sb
         .from('bets')
         .update({ status: outcome, settled_at: new Date().toISOString() })
@@ -92,13 +107,14 @@ async function main() {
         continue
       }
       settled++
-      console.log(`settled ${bet.id}: ${bet.event} / "${bet.market}" (${fixture.awayScore}-${fixture.homeScore}) → ${outcome}`)
+      if (via === 'gemini') viaGemini++
+      console.log(`settled ${bet.id} [${via}]: ${bet.event} / "${bet.market}" → ${outcome}`)
     } catch (e) {
       console.warn(`error on bet ${bet.id}: ${(e as Error).message}`)
     }
   }
 
-  console.log(`done — settled ${settled}, still pending ${skipped}`)
+  console.log(`done — settled ${settled} (${viaGemini} via Gemini), still pending ${skipped}`)
 }
 
 main().catch((e) => {

@@ -5,10 +5,9 @@ import { useUI, useActiveBankroll } from '../hooks'
 import { computeMetrics, balanceSeries, consecutiveLosses, todayLoss } from '../lib/stats'
 import { suggestedStake } from '../lib/staking'
 import { fmtMoney, fmtNumber, fmtPct, fmtDate } from '../lib/format'
-import { checkResults, AIError, GEMINI_KEY, hasAI, type SettleVerdict } from '../lib/ai'
 import { AreaChart } from '../components/charts'
 import { BetCard } from '../components/bets'
-import { StatCard, Segmented, EmptyState, Modal, StatusBadge } from '../components/ui'
+import { StatCard, Segmented, EmptyState } from '../components/ui'
 import { Icon } from '../components/Icon'
 
 type Period = '7d' | '30d' | '90d' | 'all'
@@ -19,13 +18,9 @@ export function Dashboard() {
   const { bankroll, bankrolls, bets, txs, balance } = useActiveBankroll()
   const settings = useStore((s) => s.settings)
   const setActiveBankroll = useStore((s) => s.setActiveBankroll)
-  const settleBet = useStore((s) => s.settleBet)
   const openForm = useUI((s) => s.openForm)
   const setTab = useUI((s) => s.setTab)
   const [period, setPeriod] = useState<Period>('30d')
-  const [checking, setChecking] = useState(false)
-  const [verdicts, setVerdicts] = useState<SettleVerdict[] | null>(null)
-  const [checkError, setCheckError] = useState<string | null>(null)
 
   if (!bankroll) return null
   const currency = bankroll.currency
@@ -58,31 +53,6 @@ export function Dashboard() {
   const recent = bets.slice(0, 5)
   const money = (v: number) => fmtMoney(v, currency, lang)
 
-  const checkable = useMemo(
-    () => bets.filter((b) => b.status === 'pending' && new Date(b.date).getTime() < Date.now() - 2 * 3600e3),
-    [bets]
-  )
-
-  const runCheck = async () => {
-    if (!hasAI || checking || checkable.length === 0) return
-    setChecking(true)
-    setCheckError(null)
-    try {
-      const results = await checkResults(GEMINI_KEY, checkable.slice(0, 10), lang)
-      for (const v of results) {
-        if (v.status !== 'unknown' && v.confidence !== 'low') settleBet(v.id, v.status)
-      }
-      setVerdicts(results)
-    } catch (err) {
-      const kind = err instanceof AIError ? err.kind : 'parse'
-      setCheckError(t(kind === 'badKey' ? 'ai.badKey' : kind === 'network' ? 'ai.netError' : 'ai.noneApplied'))
-    } finally {
-      setChecking(false)
-    }
-  }
-
-  const appliedCount = verdicts ? verdicts.filter((v) => v.status !== 'unknown' && v.confidence !== 'low').length : 0
-
   return (
     <div className="page">
       <header className="dash-header">
@@ -106,13 +76,6 @@ export function Dashboard() {
               </span>
             )}
             {metrics.pendingCount > 0 && <span className="chip chip-muted">{t('dash.pending', { n: metrics.pendingCount })}</span>}
-            {hasAI && checkable.length > 0 && (
-              <button className="chip chip-action" onClick={runCheck} disabled={checking}>
-                {checking ? <span className="spinner spinner-sm" /> : <Icon name="sparkles" size={13} />}
-                {checking ? t('ai.checking') : t('ai.check')}
-              </button>
-            )}
-            {checkError && <span className="chip chip-muted">{checkError}</span>}
           </div>
         </div>
         <Segmented<Period>
@@ -214,30 +177,6 @@ export function Dashboard() {
             </div>
           </section>
         </>
-      )}
-
-      {verdicts && (
-        <Modal open onClose={() => setVerdicts(null)} title={t('ai.resultsTitle')}>
-          <p className="verdict-summary">{appliedCount > 0 ? t('ai.applied', { n: appliedCount }) : t('ai.noneApplied')}</p>
-          <div className="verdict-list">
-            {verdicts.map((v) => {
-              const bet = bets.find((b) => b.id === v.id)
-              return (
-                <div key={v.id} className="verdict-row">
-                  <div className="verdict-head">
-                    <span className="verdict-event">{bet?.event || '—'}</span>
-                    {v.status === 'unknown' ? (
-                      <span className="badge badge-void">{t('ai.unknownResult')}</span>
-                    ) : (
-                      <StatusBadge status={v.status} />
-                    )}
-                  </div>
-                  {v.explanation && <p className="verdict-expl">{v.explanation}</p>}
-                </div>
-              )
-            })}
-          </div>
-        </Modal>
       )}
     </div>
   )

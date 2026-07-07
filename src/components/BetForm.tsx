@@ -4,7 +4,7 @@ import { useStore } from '../store'
 import { useUI, useActiveBankroll, SPORTS, BOOKMAKERS } from '../hooks'
 import { suggestedStake, round2 } from '../lib/staking'
 import { fmtMoney, fmtNumber, todayISO, uid } from '../lib/format'
-import { compressImage, extractBetFromImage, AIError, GEMINI_KEY, hasAI, type ExtractedBet } from '../lib/ai'
+import { compressImage, extractBetFromImage, AIError, hasAI, type ExtractedBet } from '../lib/ai'
 import { Modal, Segmented, Field } from './ui'
 import { Icon } from './Icon'
 import type { Bet, BetType } from '../types'
@@ -83,7 +83,7 @@ export function BetForm() {
     setScanError(null)
     try {
       const { data, mediaType } = await compressImage(blob)
-      applyExtracted(await extractBetFromImage(GEMINI_KEY, data, mediaType))
+      applyExtracted(await extractBetFromImage(data, mediaType))
     } catch (err) {
       const kind = err instanceof AIError ? err.kind : 'parse'
       setScanError(t(kind === 'badKey' ? 'ai.badKey' : kind === 'network' ? 'ai.netError' : 'ai.scanError'))
