@@ -5,6 +5,8 @@
 // It never talks to any API. Unrecognized markets return 'unknown' (a later
 // LLM fallback, cached per market, will handle the long tail).
 
+import { teamInText } from './match'
+
 export type Outcome = 'won' | 'lost' | 'void' | 'halfwon' | 'halflost' | 'unknown'
 
 export interface MatchResult {
@@ -55,14 +57,18 @@ function includesAny(hay: string, needles: string[]): boolean {
   return needles.some((n) => hay.includes(n))
 }
 
-/** Which side does a team reference point to? Fuzzy: substring both ways. */
+// Match short/ambiguous tokens ("no", "gg", "dnb", "si") as whole words only,
+// so they don't fire inside unrelated words (e.g. "no" inside "Norwich").
+function includesWord(hay: string, needles: string[]): boolean {
+  return needles.some((n) => new RegExp(`(^|[^a-z0-9])${n}([^a-z0-9]|$)`).test(hay))
+}
+
+/** Which side does a team reference point to? Token/prefix match so bookmaker
+ * abbreviations resolve ("Man City" → Manchester City, "Rays" → Tampa Bay Rays). */
 function sideOf(ref: string, home: string, away: string): 'home' | 'away' | null {
-  const r = norm(ref)
-  const h = norm(home)
-  const a = norm(away)
-  if (!r) return null
-  const matchesHome = h && (r.includes(h) || h.includes(r))
-  const matchesAway = a && (r.includes(a) || a.includes(r))
+  if (!norm(ref)) return null
+  const matchesHome = teamInText(home, ref)
+  const matchesAway = teamInText(away, ref)
   if (matchesHome && !matchesAway) return 'home'
   if (matchesAway && !matchesHome) return 'away'
   return null
@@ -70,19 +76,39 @@ function sideOf(ref: string, home: string, away: string): 'home' | 'away' | null
 
 // ── keyword banks (6 languages) ─────────────────────────────
 
+// Multilingual keyword banks (fr · en · es · de · it · pt). Multi-char phrases
+// are matched as substrings; short/ambiguous tokens go through includesWord.
 const KW = {
-  draw: ['match nul', 'nul', 'draw', 'tie', 'empate', 'unentschieden', 'remis', 'pareggio', 'x'],
-  over: ['plus de', 'over', '+ de', 'mas de', 'más de', 'uber', 'über', 'oltre', 'mais de', 'superiore'],
-  under: ['moins de', 'under', '- de', 'menos de', 'unter', 'sotto', 'inferiore'],
-  bttsYes: ['les deux marquent', 'both teams to score', 'btts', 'ambos marcan', 'beide treffen', 'entrambe segnano', 'ambas marcam', 'oui', 'yes', 'si', 'ja'],
-  bttsNo: ['non', 'no', 'nein', 'nao', 'não'],
-  win: ['victoire', 'vainqueur', 'remporte', 'gagne', 'wins', 'win', 'winner', 'moneyline', 'gana', 'sieg', 'gewinnt', 'vince', 'vitoria', 'vitória', 'vence'],
-  doubleChance: ['double chance', 'doppia chance', 'doble oportunidad', 'doppelte chance', 'dupla hipotese'],
-  goals: ['but', 'buts', 'goal', 'goals', 'gol', 'goles', 'tore', 'reti', 'golos'],
-  corners: ['corner', 'corners', 'coup de pied de coin', 'saque de esquina', 'ecke', 'calcio d angolo', 'pontape de canto'],
-  cards: ['carton', 'cartons', 'card', 'cards', 'carte', 'tarjeta', 'tarjetas', 'karte', 'karten', 'cartellino', 'cartao', 'cartão'],
-  scorer: ['buteur', 'to score', 'goalscorer', 'goal scorer', 'anytime scorer', 'goleador', 'anotador', 'torschutze', 'torschütze', 'marcatore', 'marcador'],
-  first: ['premier', 'first', '1er', 'primer', 'erster', 'primo', 'primeiro'],
+  // team win / moneyline
+  win: [
+    'victoire', 'vainqueur', 'remporte', 'gagnant', 'gagne', 'match winner', 'to win', 'wins', 'winner', 'win',
+    'moneyline', 'money line', 'ganador', 'gana', 'vencedor', 'vence', 'sieger', 'gewinnt', 'sieg',
+    'vittoria', 'vincitore', 'vince', 'vitoria', 'vitória',
+  ],
+  // draw (multi-char, safe as substring)
+  drawPhrase: ['match nul', 'partida empatada', 'match drawn', 'unentschieden'],
+  drawWord: ['nul', 'draw', 'tie', 'empate', 'egalite', 'remis', 'pareggio', 'empat'],
+  over: ['plus de', 'over', '+ de', 'mas de', 'más de', 'superieur', 'superior a', 'uber', 'über', 'oltre', 'superiore', 'mais de', 'acima de'],
+  under: ['moins de', 'under', '- de', 'menos de', 'inferieur', 'inferior a', 'unter', 'sotto', 'inferiore', 'menos que', 'abaixo de'],
+  // both teams to score
+  bttsPhrase: [
+    'les deux marquent', 'les 2 equipes marquent', 'deux equipes marquent', 'both teams to score', 'both teams',
+    'ambos marcan', 'ambos anotan', 'beide treffen', 'beide teams treffen', 'entrambe segnano', 'entrambe le squadre segnano',
+    'ambas marcam', 'ambas equipes marcam', 'ambas equipas marcam',
+  ],
+  bttsWord: ['btts', 'gg'],
+  no: ['non', 'no', 'nein', 'nao', 'não', 'ng'],
+  doubleChance: ['double chance', 'chance double', 'doppia chance', 'doble oportunidad', 'doble chance', 'doppelte chance', 'dupla hipotese', 'dupla chance'],
+  dnbPhrase: ['draw no bet', 'rembourse si nul', 'empate no bet', 'sin empate'],
+  handicap: ['handicap', 'asian handicap', 'handicap asiatique', 'spread'],
+  goals: ['but', 'buts', 'goal', 'goals', 'gol', 'goles', 'tore', 'reti', 'golos', 'gols'],
+  corners: ['corner', 'corners', 'coup de pied de coin', 'saque de esquina', 'ecke', 'ecken', 'calcio d angolo', 'angolo', 'pontape de canto', 'escanteio'],
+  cards: ['carton', 'cartons', 'card', 'cards', 'carte', 'tarjeta', 'tarjetas', 'karte', 'karten', 'cartellino', 'cartellini', 'cartao', 'cartão', 'cartoes', 'cartões'],
+  // scorer nouns/phrases (substring) + short verbs (whole-word, so they don't
+  // eat player names like "Marquez").
+  scorer: ['buteur', 'to score', 'goalscorer', 'goal scorer', 'scorer', 'anytime', 'goleador', 'anotador', 'marcador', 'torschutze', 'torschütze', 'marcatore'],
+  scorerWord: ['marque', 'marquera', 'marca', 'segna', 'anota', 'trifft'],
+  first: ['premier', '1er', '1re', 'first', '1st', 'primer', 'erster', 'erste', 'primo', 'primeiro', 'ouvre le score'],
 }
 
 const isFinal = (r: MatchResult) => r.status === 'finished'
@@ -106,21 +132,22 @@ export function parseMarket(market: string, home: string, away: string): Spec | 
   if (!m) return null
 
   // Both teams to score
-  if (includesAny(m, ['btts', 'les deux marquent', 'both teams', 'ambos marcan', 'beide treffen', 'entrambe segnano', 'ambas marcam'])) {
-    const no = KW.bttsNo.some((n) => new RegExp(`\\b${n}\\b`).test(m))
-    return { kind: 'btts', yes: !no }
+  if (includesAny(m, KW.bttsPhrase) || includesWord(m, KW.bttsWord)) {
+    return { kind: 'btts', yes: !includesWord(m, KW.no) }
   }
 
   // Goalscorer ("Mbappé buteur", "Mbappé to score", "1er buteur : Mbappé")
-  if (includesAny(m, KW.scorer)) {
+  if (includesAny(m, KW.scorer) || includesWord(m, KW.scorerWord)) {
     const first = includesAny(m, KW.first)
     let player = market
-    for (const k of [...KW.scorer, ...KW.first]) player = player.replace(new RegExp(k, 'gi'), ' ')
-    player = player.replace(/anytime|[:·.-]/gi, ' ').replace(/\s+/g, ' ').trim()
+    for (const k of [...KW.scorer, ...KW.scorerWord, ...KW.first]) {
+      player = player.replace(new RegExp(`\\b${k}\\b`, 'gi'), ' ')
+    }
+    player = player.replace(/[:·.\-]/g, ' ').replace(/\s+/g, ' ').trim()
     if (player) return { kind: 'scorer', player, first }
   }
 
-  // Double chance (1X / X2 / 12 or worded)
+  // Double chance codes (1X / X2 / 12)
   if (includesAny(m, KW.doubleChance) || /\b(1x|x2|12)\b/.test(m)) {
     if (/\b1x\b/.test(m)) return { kind: 'doubleChance', picks: ['home', 'draw'] }
     if (/\bx2\b/.test(m)) return { kind: 'doubleChance', picks: ['draw', 'away'] }
@@ -130,7 +157,7 @@ export function parseMarket(market: string, home: string, away: string): Spec | 
   }
 
   // Draw no bet
-  if (includesAny(m, ['draw no bet', 'rembourse si nul', 'dnb'])) {
+  if (includesAny(m, KW.dnbPhrase) || includesWord(m, ['dnb'])) {
     const s = sideOf(m, home, away)
     if (s) return { kind: 'dnb', pick: s }
   }
@@ -147,7 +174,7 @@ export function parseMarket(market: string, home: string, away: string): Spec | 
 
   // Handicap: "<team> -1.5" / "+1.5" / "handicap"
   const hc = m.match(/([+-]\s?\d+(?:[.,]\d+)?)/)
-  if (hc && (includesAny(m, ['handicap', 'hcp']) || sideOf(m.replace(hc[0], ''), home, away))) {
+  if (hc && (includesAny(m, KW.handicap) || sideOf(m.replace(hc[0], ''), home, away))) {
     const line = parseFloat(hc[1].replace(/\s/g, '').replace(',', '.'))
     const side = sideOf(m.replace(hc[0], ''), home, away) || (m.trim().startsWith('1') ? 'home' : m.trim().startsWith('2') ? 'away' : null)
     if (side) return { kind: 'handicap', side, line }
@@ -158,16 +185,16 @@ export function parseMarket(market: string, home: string, away: string): Spec | 
   if (/^\s*2\s*$/.test(m)) return { kind: '1x2', pick: 'away' }
   if (/^\s*(n|x)\s*$/.test(m)) return { kind: '1x2', pick: 'draw' }
 
-  // 1X2 — draw worded
-  if (m === 'nul' || includesAny(m, ['match nul', 'draw', 'empate', 'unentschieden', 'pareggio'])) {
+  // Draw / "team or draw" worded
+  if (includesAny(m, KW.drawPhrase) || includesWord(m, KW.drawWord)) {
+    const s = sideOf(m, home, away)
+    if (s) return { kind: 'doubleChance', picks: [s, 'draw'] } // "Team ou nul"
     return { kind: '1x2', pick: 'draw' }
   }
 
-  // 1X2 — team win ("victoire PSG", "PSG wins", "PSG")
+  // 1X2 — team win ("victoire PSG", "PSG wins", "Man City")
   const side = sideOf(market, home, away)
-  if (side && (includesAny(m, KW.win) || sideOf(market, home, away))) {
-    return { kind: '1x2', pick: side }
-  }
+  if (side) return { kind: '1x2', pick: side }
 
   return null
 }

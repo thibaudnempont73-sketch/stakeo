@@ -39,6 +39,21 @@ function teamMatches(part: string, teamName: string): boolean {
   return p.every((pt) => t.some((tt) => tt === pt || tt.startsWith(pt) || pt.startsWith(tt)))
 }
 
+// True when a team name appears inside a free-text selection — every
+// significant token of the team has a prefix-compatible token in the text.
+// Handles bookmaker abbreviations: "Man City" ⊂ "Man City wins" → Manchester
+// City, "Rays" ⊂ "Tampa Bay Rays remporte" → Tampa Bay Rays.
+export function teamInText(team: string, text: string): boolean {
+  const tt = tokens(team)
+  const xt = tokens(text)
+  if (!tt.length || !xt.length) return false
+  const compat = (a: string, b: string) => a === b || a.startsWith(b) || b.startsWith(a)
+  const subset = (small: string[], big: string[]) => small.every((k) => big.some((w) => compat(k, w)))
+  // Either direction: full team name inside a longer selection ("Man City
+  // wins"), or a short nickname that is part of the team ("Rays").
+  return subset(tt, xt) || subset(xt, tt)
+}
+
 /** Find the game matching a bet's event text ("Memphis – Minnesota") in a list. */
 export function matchFixture(eventText: string, results: MatchResult[]): MatchResult | null {
   const parts = splitEvent(eventText)
