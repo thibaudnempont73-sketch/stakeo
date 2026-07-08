@@ -110,8 +110,8 @@ Clés API : secrets serveur (Supabase / GitHub Actions), jamais dans le navigate
 
 - [ ] **Jeu responsable** : limites de mise/dépôt, auto-exclusion, liens d'aide (ANJ / Joueurs Info Service), renforcer tilt/stop-loss.
 - [ ] **RGPD** : export + suppression complète du compte, politique de confidentialité, hébergement UE.
-- [ ] **Notifications** : à l'ouverture (« ton pari est réglé »), résumé quotidien.
-- [ ] Onboarding, perfs, accessibilité, polish PWA (installation, icônes).
+- [x] **Notifications** ✅ : à l'ouverture, récap des paris réglés depuis la dernière visite (toast → Paris + net gagné/perdu) ; notifications système optionnelles (opt-in) ; réglage on/off. `src/lib/notify.ts` + `SettlementToast`. (Push app fermée = Phase 4.)
+- [~] **Onboarding & polish PWA** : ✅ installation (bouton + prompt), ✅ icônes PNG 192/512 maskables + apple-touch, ✅ onboarding revu (met en avant scan + règlement auto), ✅ états vides orientés scan/partage. Reste : perfs/accessibilité fines.
 - [ ] Lancement web multilingue (Europe).
 
 ---
