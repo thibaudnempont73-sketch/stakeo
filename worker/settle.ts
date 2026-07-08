@@ -4,7 +4,7 @@
 //
 // Run: SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… npx tsx worker/settle.ts
 import { createClient } from '@supabase/supabase-js'
-import { fetchEspn, matchFixture, ESPN_SPORT } from './adapters/espn'
+import { fetchResults, matchFixture, hasFreeCoverage } from './adapters'
 import { settleMarket, type MatchResult, type Outcome } from '../src/lib/settle'
 import { resolveViaGemini, type GeminiVerdict } from './gemini'
 
@@ -32,18 +32,10 @@ function ymd(d: Date): string {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
 }
 
-// One ESPN fetch per (sportPath, date), reused across all bets in this run.
-const cache = new Map<string, Promise<MatchResult[]>>()
-function getResults(sportPath: string, date: string): Promise<MatchResult[]> {
-  const k = `${sportPath}:${date}`
-  if (!cache.has(k)) cache.set(k, fetchEspn(sportPath, date).catch(() => [] as MatchResult[]))
-  return cache.get(k)!
-}
-
 // Fetch the match day plus ±1 day (kickoff timezone can shift the date).
+// fetchResults() queries every free source for the sport, deduped and cached.
 async function resultsForBet(sport: string, dateISO: string): Promise<MatchResult[]> {
-  const sportPath = ESPN_SPORT[sport]
-  if (!sportPath) return []
+  if (!hasFreeCoverage(sport)) return []
   const base = new Date(dateISO)
   if (isNaN(base.getTime())) return []
   const dates = [-1, 0, 1].map((off) => {
@@ -51,7 +43,7 @@ async function resultsForBet(sport: string, dateISO: string): Promise<MatchResul
     d.setDate(d.getDate() + off)
     return ymd(d)
   })
-  const all = await Promise.all(dates.map((d) => getResults(sportPath, d)))
+  const all = await Promise.all(dates.map((d) => fetchResults(sport, d)))
   return all.flat()
 }
 
@@ -61,7 +53,7 @@ async function resultsForBet(sport: string, dateISO: string): Promise<MatchResul
 // economy: we only ever fetch the matches users actually bet on.
 async function settleComboViaEngine(bet: any): Promise<Outcome> {
   const legs = (bet.legs ?? []) as Array<{ event?: string; selection: string }>
-  if (!ESPN_SPORT[bet.sport] || legs.length < 2) return 'unknown'
+  if (!hasFreeCoverage(bet.sport) || legs.length < 2) return 'unknown'
   if (legs.some((l) => !l.event)) return 'unknown' // need a match per leg to target the API
   const results = await resultsForBet(bet.sport, bet.date)
   let sawWin = false
@@ -99,9 +91,9 @@ async function main() {
       let outcome: Outcome = 'unknown'
       let via = 'engine'
 
-      // 1. Free path: engine + ESPN adapter — singles by their event, combos
-      //    leg-by-leg by each leg's match. Only ESPN-covered sports.
-      if (ESPN_SPORT[bet.sport]) {
+      // 1. Free path: engine + no-key adapters (ESPN + TheSportsDB) — singles
+      //    by their event, combos leg-by-leg by each leg's match.
+      if (hasFreeCoverage(bet.sport)) {
         if (bet.type === 'combo') {
           outcome = await settleComboViaEngine(bet)
         } else {

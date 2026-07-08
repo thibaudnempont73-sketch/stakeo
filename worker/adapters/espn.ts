@@ -1,16 +1,48 @@
-// ESPN adapter (no API key). Fetches a league's scoreboard for a date and
+// ESPN adapter (no API key). Fetches a league scoreboard for a date and
 // normalizes each game into the engine's `MatchResult`. Runs server-side
 // (cron / GitHub Actions), never in the browser.
+//
+// ESPN exposes one scoreboard per league, so each app sport maps to the list
+// of ESPN leagues we want to cover for it.
 import type { MatchResult } from '../../src/lib/settle'
 
-// App sport → ESPN sport path. Soccer needs a league code (eng.1, esp.1, …);
-// "all" aggregates the major ones.
-export const ESPN_SPORT: Record<string, string> = {
-  basketball: 'basketball/nba',
-  amfootball: 'football/nfl',
-  baseball: 'baseball/mlb',
-  hockey: 'hockey/nhl',
-  football: 'soccer/all',
+export const ESPN_LEAGUES: Record<string, string[]> = {
+  football: [
+    'soccer/eng.1', // Premier League
+    'soccer/esp.1', // LaLiga
+    'soccer/ita.1', // Serie A
+    'soccer/ger.1', // Bundesliga
+    'soccer/fra.1', // Ligue 1
+    'soccer/por.1', // Primeira Liga
+    'soccer/ned.1', // Eredivisie
+    'soccer/bel.1', // Jupiler Pro League
+    'soccer/tur.1', // Süper Lig
+    'soccer/eng.2', // Championship
+    'soccer/esp.2', // LaLiga 2
+    'soccer/ita.2', // Serie B
+    'soccer/ger.2', // 2. Bundesliga
+    'soccer/fra.2', // Ligue 2
+    'soccer/uefa.champions', // Champions League
+    'soccer/uefa.europa', // Europa League
+    'soccer/uefa.europa.conf', // Conference League
+    'soccer/eng.fa', // FA Cup
+    'soccer/usa.1', // MLS
+    'soccer/mex.1', // Liga MX
+    'soccer/bra.1', // Brasileirão
+    'soccer/arg.1', // Liga Profesional
+    'soccer/sau.1', // Saudi Pro League
+  ],
+  basketball: [
+    'basketball/nba',
+    'basketball/wnba',
+    'basketball/mens-college-basketball',
+  ],
+  amfootball: [
+    'football/nfl',
+    'football/college-football',
+  ],
+  baseball: ['baseball/mlb'],
+  hockey: ['hockey/nhl'],
 }
 
 function normStatus(name: string | undefined): MatchResult['status'] {
@@ -21,7 +53,7 @@ function normStatus(name: string | undefined): MatchResult['status'] {
   return 'in_progress'
 }
 
-/** Fetch and normalize one league's games for a given YYYYMMDD date. */
+/** Fetch and normalize one ESPN league's games for a given YYYYMMDD date. */
 export async function fetchEspn(sportPath: string, dateYYYYMMDD: string): Promise<MatchResult[]> {
   const url = `https://site.api.espn.com/apis/site/v2/sports/${sportPath}/scoreboard?dates=${dateYYYYMMDD}`
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
@@ -43,23 +75,4 @@ export async function fetchEspn(sportPath: string, dateYYYYMMDD: string): Promis
     })
   }
   return out
-}
-
-function norm(s: string): string {
-  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
-}
-
-/** Find the game matching a bet's event text ("Memphis – Minnesota") in a list. */
-export function matchFixture(eventText: string, results: MatchResult[]): MatchResult | null {
-  const parts = norm(eventText)
-    .split(/ - | – | — | vs | @ /)
-    .map((s) => s.trim())
-    .filter((s) => s.length >= 3)
-  if (parts.length < 2) return null
-  for (const r of results) {
-    const teams = [norm(r.home), norm(r.away)]
-    const allFound = parts.every((p) => teams.some((t) => t.includes(p) || p.includes(t)))
-    if (allFound) return r
-  }
-  return null
 }
