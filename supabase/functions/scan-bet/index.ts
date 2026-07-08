@@ -6,8 +6,7 @@
 // the browser. Deploy: `supabase functions deploy scan-bet`.
 
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''
-// Flash (not Flash-Lite): far more reliable at reading multi-leg combos.
-const MODEL = 'gemini-2.5-flash'
+const MODEL = 'gemini-2.5-flash-lite'
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 const SPORTS = [
@@ -28,13 +27,13 @@ FIRST decide single vs combo by COUNTING the matches on the slip:
 - If it shows exactly ONE match, it is a SINGLE. Set type="single".
 
 For a COMBO — this is critical:
-- You MUST include EVERY match as a separate entry in "legs". Never drop a match, never merge two matches into one. If there are 2 matches, "legs" has exactly 2 entries; if 3, then 3; etc.
-- Each leg = one match: put the event + the picked selection in "selection", and that leg's OWN decimal odds in "odds".
-- The top-level "odds" is the TOTAL = the product of all leg odds. "market" stays "".
-- Scan the whole image top to bottom; combos often list matches in a vertical list — include all of them.
+- Include EVERY match as a separate entry in "legs". Never drop a match, never merge two matches. 2 matches → exactly 2 legs; 3 → 3; etc.
+- Each leg has: "event" (the match, e.g. "PSG – Marseille"), "selection" (the pick, e.g. "Victoire PSG"), and "odds" (that leg's decimal odds).
+- The top-level "odds" is the TOTAL = product of all leg odds. Top-level "event" = "" and "market" = "".
+- Scan the whole image top to bottom; combos list matches vertically — include all of them.
 
 For a SINGLE:
-- Fill "market" with the market + selection, and leave "legs" as [].
+- Fill top-level "event" (the match) and "market" (the pick), leave "legs" as [].
 
 General rules:
 - Keep event names, markets and selections in their ORIGINAL language, exactly as written.
@@ -45,7 +44,7 @@ General rules:
 - If the image is NOT a bet slip, set found=false and leave the rest empty/zero.
 
 Respond with ONLY a JSON object of this exact shape, no markdown:
-{"found":boolean,"event":string,"sport":string,"market":string,"type":"single"|"combo","legs":[{"selection":string,"odds":number}],"odds":number,"stake":number,"bookmaker":string,"isLive":boolean,"date":string}`
+{"found":boolean,"event":string,"sport":string,"market":string,"type":"single"|"combo","legs":[{"event":string,"selection":string,"odds":number}],"odds":number,"stake":number,"bookmaker":string,"isLive":boolean,"date":string}`
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { ...cors, 'Content-Type': 'application/json' } })

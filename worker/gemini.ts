@@ -18,7 +18,7 @@ interface BetLike {
   market: string
   date: string
   type: string
-  legs?: Array<{ selection: string }>
+  legs?: Array<{ event?: string; selection: string }>
 }
 
 const UNKNOWN: GeminiVerdict = { status: 'unknown', confidence: 'low' }
@@ -27,7 +27,7 @@ export async function resolveViaGemini(key: string, bet: BetLike): Promise<Gemin
   const desc =
     bet.type === 'combo'
       ? `Accumulator/combo bet — it wins only if EVERY selection wins:\n${(bet.legs ?? [])
-          .map((l) => `- ${l.selection}`)
+          .map((l) => (l.event ? `- ${l.event}: ${l.selection}` : `- ${l.selection}`))
           .join('\n')}`
       : `Event: ${bet.event}\nSelection: ${bet.market}`
 

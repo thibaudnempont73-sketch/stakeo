@@ -63,7 +63,7 @@ export interface ExtractedBet {
   sport: string
   market: string
   type: 'single' | 'combo'
-  legs: { selection: string; odds: number }[]
+  legs: { event?: string; selection: string; odds: number }[]
   odds: number
   stake: number
   bookmaker: string

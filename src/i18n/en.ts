@@ -96,6 +96,7 @@ export const en = {
   'form.legs': 'Selections',
   'form.addLeg': 'Add selection',
   'form.legPh': 'Real Madrid wins',
+  'form.legEventPh': 'Match (e.g. Real Madrid – Barcelona)',
   'form.totalOdds': 'Total odds',
   'form.tipster': 'Tipster',
   'form.notes': 'Notes',

@@ -1156,10 +1156,47 @@ textarea {
 }
 
 .leg-row {
-  display: grid;
-  grid-template-columns: 1fr 84px auto;
+  display: flex;
+  align-items: flex-start;
   gap: 8px;
+}
+
+.leg-num {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 8px;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg2);
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.leg-fields {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leg-fields-row {
+  display: grid;
+  grid-template-columns: 1fr 84px;
+  gap: 8px;
+}
+
+.leg-event-input {
+  font-weight: 600;
+}
+
+.leg-row .icon-btn {
+  margin-top: 4px;
 }
 
 .leg-footer {
@@ -1447,11 +1484,25 @@ textarea {
 .detail-leg {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 10px;
   background: var(--bg2);
   border-radius: 10px;
   padding: 9px 12px;
   font-size: 13.5px;
+}
+
+.detail-leg-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detail-leg-event {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text2);
 }
 
 .leg-odds {

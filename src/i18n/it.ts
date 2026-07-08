@@ -97,6 +97,7 @@ export const it: Dict = {
   'form.legs': 'Selezioni',
   'form.addLeg': 'Aggiungi selezione',
   'form.legPh': 'Vince il Real Madrid',
+  'form.legEventPh': 'Partita (es. Real Madrid – Barcellona)',
   'form.totalOdds': 'Quota totale',
   'form.tipster': 'Tipster',
   'form.notes': 'Note',

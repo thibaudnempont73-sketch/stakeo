@@ -13,6 +13,7 @@ const parseNum = (s: string) => parseFloat(s.replace(',', '.'))
 
 interface LegDraft {
   id: string
+  event: string
   selection: string
   odds: string
 }
@@ -42,10 +43,10 @@ export function BetForm() {
   const [isLive, setIsLive] = useState(base.isLive || false)
   const [legs, setLegs] = useState<LegDraft[]>(
     base.legs && base.legs.length > 0
-      ? base.legs.map((l) => ({ id: l.id, selection: l.selection, odds: String(l.odds) }))
+      ? base.legs.map((l) => ({ id: l.id, event: l.event || '', selection: l.selection, odds: String(l.odds) }))
       : [
-          { id: uid(), selection: '', odds: '' },
-          { id: uid(), selection: '', odds: '' },
+          { id: uid(), event: '', selection: '', odds: '' },
+          { id: uid(), event: '', selection: '', odds: '' },
         ]
   )
   const [tipster, setTipster] = useState(base.tipster || '')
@@ -65,7 +66,7 @@ export function BetForm() {
     if (ex.event) setEvent(ex.event)
     if (ex.type === 'combo' && ex.legs && ex.legs.length >= 2) {
       setType('combo')
-      setLegs(ex.legs.map((l) => ({ id: uid(), selection: l.selection, odds: String(l.odds) })))
+      setLegs(ex.legs.map((l) => ({ id: uid(), event: l.event || '', selection: l.selection, odds: String(l.odds) })))
     } else {
       setType('single')
       if (ex.market) setMarket(ex.market)
@@ -138,8 +139,8 @@ export function BetForm() {
     let finalLegs = editing?.legs || []
     if (type === 'combo') {
       const parsed = legs
-        .filter((l) => l.selection.trim() || l.odds.trim())
-        .map((l) => ({ id: l.id, selection: l.selection.trim(), odds: parseNum(l.odds) }))
+        .filter((l) => l.event.trim() || l.selection.trim() || l.odds.trim())
+        .map((l) => ({ id: l.id, event: l.event.trim() || undefined, selection: l.selection.trim(), odds: parseNum(l.odds) }))
       if (parsed.length < 2 || parsed.some((l) => !l.selection || !isFinite(l.odds) || l.odds <= 1)) {
         errs.legs = t('form.err.legs')
       }
@@ -254,20 +255,32 @@ export function BetForm() {
               <span className="field-label">{t('form.legs')}</span>
               {legs.map((leg, i) => (
                 <div key={leg.id} className="leg-row">
-                  <input
-                    type="text"
-                    placeholder={t('form.legPh')}
-                    value={leg.selection}
-                    onChange={(e) => setLegs(legs.map((l) => (l.id === leg.id ? { ...l, selection: e.target.value } : l)))}
-                  />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="1.50"
-                    className="leg-odds-input"
-                    value={leg.odds}
-                    onChange={(e) => setLegs(legs.map((l) => (l.id === leg.id ? { ...l, odds: e.target.value } : l)))}
-                  />
+                  <span className="leg-num">{i + 1}</span>
+                  <div className="leg-fields">
+                    <input
+                      type="text"
+                      className="leg-event-input"
+                      placeholder={t('form.legEventPh')}
+                      value={leg.event}
+                      onChange={(e) => setLegs(legs.map((l) => (l.id === leg.id ? { ...l, event: e.target.value } : l)))}
+                    />
+                    <div className="leg-fields-row">
+                      <input
+                        type="text"
+                        placeholder={t('form.legPh')}
+                        value={leg.selection}
+                        onChange={(e) => setLegs(legs.map((l) => (l.id === leg.id ? { ...l, selection: e.target.value } : l)))}
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="1.50"
+                        className="leg-odds-input"
+                        value={leg.odds}
+                        onChange={(e) => setLegs(legs.map((l) => (l.id === leg.id ? { ...l, odds: e.target.value } : l)))}
+                      />
+                    </div>
+                  </div>
                   {legs.length > 2 && (
                     <button className="icon-btn" onClick={() => setLegs(legs.filter((l) => l.id !== leg.id))} aria-label={t('common.delete')}>
                       <Icon name="x" size={16} />
@@ -277,7 +290,7 @@ export function BetForm() {
               ))}
               {errors.legs && <span className="field-error">{errors.legs}</span>}
               <div className="leg-footer">
-                <button className="btn btn-sm" onClick={() => setLegs([...legs, { id: uid(), selection: '', odds: '' }])}>
+                <button className="btn btn-sm" onClick={() => setLegs([...legs, { id: uid(), event: '', selection: '', odds: '' }])}>
                   <Icon name="plus" size={15} /> {t('form.addLeg')}
                 </button>
                 <span className="total-odds">

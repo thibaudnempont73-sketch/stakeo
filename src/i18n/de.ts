@@ -97,6 +97,7 @@ export const de: Dict = {
   'form.legs': 'Auswahlen',
   'form.addLeg': 'Auswahl hinzufügen',
   'form.legPh': 'Real Madrid gewinnt',
+  'form.legEventPh': 'Spiel (z. B. Real Madrid – Barcelona)',
   'form.totalOdds': 'Gesamtquote',
   'form.tipster': 'Tippgeber',
   'form.notes': 'Notizen',

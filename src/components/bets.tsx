@@ -138,7 +138,10 @@ export function BetDetail() {
           <span className="detail-label">{t('form.legs')}</span>
           {bet.legs.map((l) => (
             <div key={l.id} className="detail-leg">
-              <span>{l.selection}</span>
+              <span className="detail-leg-text">
+                {l.event && <span className="detail-leg-event">{l.event}</span>}
+                <span>{l.selection}</span>
+              </span>
               <span className="leg-odds">{fmtOdds(l.odds, settings.oddsFormat, lang)}</span>
             </div>
           ))}

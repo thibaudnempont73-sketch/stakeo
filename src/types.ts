@@ -6,6 +6,7 @@ export type Theme = 'dark' | 'light'
 
 export interface BetLeg {
   id: string
+  event?: string
   selection: string
   odds: number
 }
