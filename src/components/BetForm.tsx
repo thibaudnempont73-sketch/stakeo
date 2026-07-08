@@ -87,7 +87,7 @@ export function BetForm() {
       applyExtracted(await extractBetFromImage(data, mediaType))
     } catch (err) {
       const kind = err instanceof AIError ? err.kind : 'parse'
-      setScanError(t(kind === 'badKey' ? 'ai.badKey' : kind === 'network' ? 'ai.netError' : 'ai.scanError'))
+      setScanError(t(kind === 'badKey' ? 'ai.badKey' : kind === 'network' ? 'ai.netError' : kind === 'rate' ? 'ai.rateLimit' : 'ai.scanError'))
     } finally {
       setScanning(false)
     }

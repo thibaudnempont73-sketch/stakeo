@@ -7,7 +7,7 @@ const ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || '
 // so it's available whenever the backend is configured.
 export const hasAI = isSupabaseConfigured
 
-export type AIErrorKind = 'badKey' | 'network' | 'parse' | 'notConfigured'
+export type AIErrorKind = 'badKey' | 'network' | 'parse' | 'notConfigured' | 'rate'
 
 export class AIError extends Error {
   kind: AIErrorKind
@@ -95,10 +95,12 @@ export async function extractBetFromImage(imageBase64: string, mediaType: string
   if (!res.ok) {
     let kind: AIErrorKind = res.status === 404 || res.status === 500 ? 'notConfigured' : 'parse'
     if (res.status === 401 || res.status === 403) kind = 'badKey'
+    if (res.status === 429) kind = 'rate'
     try {
       const e = await res.json()
       if (e?.error === 'badKey') kind = 'badKey'
       else if (e?.error === 'not_configured') kind = 'notConfigured'
+      else if (e?.error === 'rate_limited') kind = 'rate'
     } catch {
       /* ignore */
     }

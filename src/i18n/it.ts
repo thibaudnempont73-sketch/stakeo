@@ -202,6 +202,7 @@ export const it: Dict = {
   'ai.scanError': 'Impossibile leggere una scommessa in questa immagine. Prova con uno screenshot più nitido.',
   'ai.badKey': 'Chiave API non valida. Controllala nelle impostazioni.',
   'ai.netError': 'Connessione non riuscita. Controlla internet e riprova.',
+  'ai.rateLimit': 'Limite giornaliero di scansioni raggiunto. Riprova domani o aggiungi la scommessa manualmente.',
   'ai.noKey': 'Aggiungi la tua chiave API Claude per scansionare le schedine e chiudere le scommesse automaticamente.',
   'ai.goSettings': 'Configura',
   'ai.check': 'Verifica risultati',

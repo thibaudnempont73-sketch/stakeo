@@ -202,6 +202,7 @@ export const es: Dict = {
   'ai.scanError': 'No se pudo leer una apuesta en esta imagen. Prueba con una captura más nítida.',
   'ai.badKey': 'Clave API no válida. Compruébala en los ajustes.',
   'ai.netError': 'Fallo de conexión. Comprueba tu internet e inténtalo de nuevo.',
+  'ai.rateLimit': 'Límite diario de escaneos alcanzado. Vuelve mañana o añade la apuesta manualmente.',
   'ai.noKey': 'Añade tu clave API de Claude para escanear boletos y resolver apuestas automáticamente.',
   'ai.goSettings': 'Configurar',
   'ai.check': 'Comprobar resultados',

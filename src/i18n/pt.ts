@@ -202,6 +202,7 @@ export const pt: Dict = {
   'ai.scanError': 'Não foi possível ler uma aposta nesta imagem. Tenta uma captura mais nítida.',
   'ai.badKey': 'Chave API inválida. Verifica-a nas definições.',
   'ai.netError': 'Falha de ligação. Verifica a tua internet e tenta novamente.',
+  'ai.rateLimit': 'Limite diário de digitalizações atingido. Tenta amanhã ou adiciona a aposta manualmente.',
   'ai.noKey': 'Adiciona a tua chave API Claude para digitalizar talões e fechar apostas automaticamente.',
   'ai.goSettings': 'Configurar',
   'ai.check': 'Verificar resultados',

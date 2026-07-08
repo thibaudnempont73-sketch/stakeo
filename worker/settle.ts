@@ -166,7 +166,9 @@ async function main() {
       }
       settled++
       if (via === 'gemini') viaGemini++
-      console.log(`settled ${bet.id} [${via}]: ${bet.event} / "${bet.market}" → ${outcome}`)
+      // Log ids/outcome only — never the bet content (event/market), which is
+      // user data and CI logs can be public.
+      console.log(`settled ${bet.id} [${via}] → ${outcome}`)
     } catch (e) {
       console.warn(`error on bet ${bet.id}: ${(e as Error).message}`)
     }

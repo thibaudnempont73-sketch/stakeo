@@ -133,3 +133,38 @@ alter table public.results enable row level security;
 drop policy if exists results_read on public.results;
 create policy results_read on public.results
   for select using (auth.role() = 'authenticated');
+
+-- ─────────────────────────────────────────────────────────────
+-- Scan usage guard: a generous per-user daily counter for the scan-bet
+-- Edge Function (abuse guard on the paid Gemini key, NOT a usage limit).
+-- Only the SECURITY DEFINER rpc below may write it, so it can't be reset.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.scan_usage (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  day date not null default current_date,
+  count int not null default 0,
+  primary key (user_id, day)
+);
+alter table public.scan_usage enable row level security;
+drop policy if exists scan_usage_read on public.scan_usage;
+create policy scan_usage_read on public.scan_usage
+  for select using (auth.uid() = user_id);
+
+-- Atomically increment today's scan count for the caller; returns the new count.
+create or replace function public.bump_scan_usage()
+returns int
+language plpgsql
+security definer set search_path = public
+as $$
+declare c int;
+begin
+  insert into public.scan_usage (user_id, day, count)
+  values (auth.uid(), current_date, 1)
+  on conflict (user_id, day) do update set count = public.scan_usage.count + 1
+  returning count into c;
+  return c;
+end;
+$$;
+
+revoke all on function public.bump_scan_usage() from public, anon;
+grant execute on function public.bump_scan_usage() to authenticated;

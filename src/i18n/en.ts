@@ -201,6 +201,7 @@ export const en = {
   'ai.scanError': 'Could not read a bet on this image. Try a sharper screenshot.',
   'ai.badKey': 'Invalid API key. Check it in the settings.',
   'ai.netError': 'Connection failed. Check your internet and try again.',
+  'ai.rateLimit': 'Daily scan limit reached. Try again tomorrow or add the bet manually.',
   'ai.noKey': 'Add your Claude API key to scan bet slips and settle bets automatically.',
   'ai.goSettings': 'Configure',
   'ai.check': 'Check results',

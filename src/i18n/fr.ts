@@ -202,6 +202,7 @@ export const fr: Dict = {
   'ai.scanError': 'Impossible de lire un pari sur cette image. Essaie une capture plus nette.',
   'ai.badKey': 'Clé API invalide. Vérifie-la dans les réglages.',
   'ai.netError': 'Connexion impossible. Vérifie ta connexion internet et réessaie.',
+  'ai.rateLimit': 'Limite de scans quotidienne atteinte. Réessaie demain ou ajoute le pari manuellement.',
   'ai.noKey': 'Ajoute ta clé API Claude pour scanner tes tickets et régler tes paris automatiquement.',
   'ai.goSettings': 'Configurer',
   'ai.check': 'Vérifier les résultats',

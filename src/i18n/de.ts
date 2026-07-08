@@ -202,6 +202,7 @@ export const de: Dict = {
   'ai.scanError': 'Auf diesem Bild konnte keine Wette erkannt werden. Versuche einen schärferen Screenshot.',
   'ai.badKey': 'Ungültiger API-Schlüssel. Prüfe ihn in den Einstellungen.',
   'ai.netError': 'Verbindung fehlgeschlagen. Prüfe dein Internet und versuche es erneut.',
+  'ai.rateLimit': 'Tägliches Scan-Limit erreicht. Versuche es morgen erneut oder füge die Wette manuell hinzu.',
   'ai.noKey': 'Füge deinen Claude-API-Schlüssel hinzu, um Wettscheine zu scannen und Wetten automatisch abzurechnen.',
   'ai.goSettings': 'Einrichten',
   'ai.check': 'Ergebnisse prüfen',
