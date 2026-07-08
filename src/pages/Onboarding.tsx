@@ -34,15 +34,15 @@ export function Onboarding() {
 
         <ul className="feature-list">
           <li>
-            <Icon name="bolt" size={18} />
+            <Icon name="camera" size={18} />
             <span>{t('onboarding.f1')}</span>
           </li>
           <li>
-            <Icon name="chart" size={18} />
+            <Icon name="sparkles" size={18} />
             <span>{t('onboarding.f2')}</span>
           </li>
           <li>
-            <Icon name="shield" size={18} />
+            <Icon name="chart" size={18} />
             <span>{t('onboarding.f3')}</span>
           </li>
         </ul>
