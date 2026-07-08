@@ -1581,6 +1581,19 @@ textarea {
   margin-bottom: 0;
 }
 
+.share-card .btn-primary {
+  align-self: flex-start;
+}
+
+.share-platform {
+  margin-top: -4px;
+}
+
+.share-ok {
+  color: var(--pos, #22c55e);
+  font-weight: 600;
+}
+
 .bankroll-list {
   display: flex;
   flex-direction: column;

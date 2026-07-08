@@ -7,6 +7,7 @@ import { fmtMoney, fmtDate, todayISO } from '../lib/format'
 import { Field, Modal, Segmented } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { useAuth, isSupabaseConfigured } from '../auth'
+import { useInstall } from '../lib/pwa'
 import type { OddsFormat, StakingMethod, Theme } from '../types'
 
 function download(filename: string, content: string, mime: string) {
@@ -31,12 +32,25 @@ export function Settings() {
   const [managing, setManaging] = useState<string | 'new' | null>(null)
   const authUser = useAuth((s) => s.user)
   const signOut = useAuth((s) => s.signOut)
+  const { canInstall, promptInstall, isIOS, isStandalone } = useInstall()
 
   return (
     <div className="page">
       <header className="page-header">
         <h1>{t('settings.title')}</h1>
       </header>
+
+      <section className="card settings-card share-card">
+        <h2 className="card-title">{t('settings.share')}</h2>
+        <p className="field-hint">{t('settings.shareHint')}</p>
+        {canInstall && (
+          <button className="btn btn-primary" onClick={promptInstall}>
+            <Icon name="download" size={16} /> {t('settings.installApp')}
+          </button>
+        )}
+        <p className="field-hint share-platform">{isIOS ? t('settings.shareIos') : t('settings.shareAndroid')}</p>
+        {isStandalone && <p className="field-hint share-ok">✓ {t('settings.shareInstalled')}</p>}
+      </section>
 
       <section className="card settings-card">
         <h2 className="card-title">{t('settings.general')}</h2>
