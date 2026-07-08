@@ -77,28 +77,27 @@ async function bumpUsage(authHeader: string): Promise<number> {
   }
 }
 
-const PROMPT = `You extract structured data from a sports betting slip screenshot (Winamax, Betclic, Bet365, Unibet, Stake, PMU, etc.).
+const PROMPT = `You extract one bet from a screenshot. It may be a placed bet slip (Winamax, Betclic, Bet365, Unibet, Stake, PMU…) OR a betting prediction/pick/tip card (a selection with its odds, possibly with model probability, "edge", or "upcoming"/"À venir"). Both are valid — a stake or bookmaker is NOT required.
 
-FIRST decide single vs combo by COUNTING the matches on the slip:
-- If the slip shows 2 OR MORE distinct matches/events, it is a COMBO (combiné / parlay / accumulator / multiple). Set type="combo".
-- If it shows exactly ONE match, it is a SINGLE. Set type="single".
+DECIDE the type:
+- COMBO (combiné / parlay / accumulator): 2+ matches joined into ONE bet, sharing ONE stake and ONE combined total odds (the total = product of the legs). Only then set type="combo".
+- SINGLE: exactly one match/selection. Set type="single".
+- A LIST OF INDEPENDENT PICKS (several separate matches, each with its OWN odds, NO single combined total, e.g. a tipster list) is NOT a combo and is NOT one bet. In that case extract ONLY THE FIRST pick as a SINGLE (type="single").
 
-For a COMBO — this is critical:
-- Include EVERY match as a separate entry in "legs". Never drop a match, never merge two matches. 2 matches → exactly 2 legs; 3 → 3; etc.
-- Each leg has: "event" (the match, e.g. "PSG – Marseille"), "selection" (the pick, e.g. "Victoire PSG"), and "odds" (that leg's decimal odds).
-- The top-level "odds" is the TOTAL = product of all leg odds. Top-level "event" = "" and "market" = "".
-- Scan the whole image top to bottom; combos list matches vertically — include all of them.
+For a COMBO:
+- Put EVERY match as a separate entry in "legs": {"event","selection","odds"}. Never drop or merge matches.
+- Top-level "odds" = the combined TOTAL. Top-level "event" = "" and "market" = "".
 
 For a SINGLE:
-- Fill top-level "event" (the match) and "market" (the pick), leave "legs" as [].
+- Fill top-level "event" (the match, e.g. "New York Yankees @ Tampa Bay Rays"), "market" (the pick, e.g. "Tampa Bay Rays remporte le match"), "odds" (its decimal odds). Leave "legs" as [].
 
 General rules:
 - Keep event names, markets and selections in their ORIGINAL language, exactly as written.
 - Always output DECIMAL (European) odds. Convert fractional/american odds to decimal.
-- "stake" = amount wagered (0 if not visible). "bookmaker" = app/site name if identifiable, else "".
+- "stake" = amount wagered (0 if not shown). "bookmaker" = app/site name if identifiable, else "".
 - "sport" must be one of: ${SPORTS.join(', ')}.
 - "date" = event start "YYYY-MM-DDTHH:MM" if visible, else "".
-- If the image is NOT a bet slip, set found=false and leave the rest empty/zero.
+- Set found=false ONLY if there is no readable betting selection or odds at all.
 
 Respond with ONLY a JSON object of this exact shape, no markdown:
 {"found":boolean,"event":string,"sport":string,"market":string,"type":"single"|"combo","legs":[{"event":string,"selection":string,"odds":number}],"odds":number,"stake":number,"bookmaker":string,"isLive":boolean,"date":string}`
