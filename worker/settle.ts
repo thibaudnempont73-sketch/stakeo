@@ -4,7 +4,7 @@
 //
 // Run: SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… npx tsx worker/settle.ts
 import { createClient } from '@supabase/supabase-js'
-import { fetchResults, matchFixture, hasFreeCoverage } from './adapters'
+import { fetchResults, matchFixture, hasFreeCoverage, enrichFixture } from './adapters'
 import { settleMarket, type MatchResult, type Outcome } from '../src/lib/settle'
 import { resolveViaGemini, type GeminiVerdict } from './gemini'
 
@@ -47,6 +47,19 @@ async function resultsForBet(sport: string, dateISO: string): Promise<MatchResul
   return all.flat()
 }
 
+// Settle a market from a matched fixture. Score-based markets resolve on the
+// first pass; only if that's 'unknown' do we spend API-Football calls to pull
+// exotic data (corners/cards/scorers) and retry — so the free quota is used
+// solely for the exotic markets that actually need it.
+async function settleWithEnrich(market: string, fixture: MatchResult): Promise<Outcome> {
+  let o = settleMarket(market, fixture)
+  if (o === 'unknown' && fixture.provider === 'apifootball' && fixture.providerId) {
+    const enriched = await enrichFixture(fixture)
+    o = settleMarket(market, enriched)
+  }
+  return o
+}
+
 // Settle a combo leg-by-leg with the free ESPN engine, using each leg's own
 // match (leg.event). Returns 'unknown' if any leg can't be resolved yet — the
 // caller then falls back to Gemini for the whole combo. This keeps the API
@@ -60,7 +73,7 @@ async function settleComboViaEngine(bet: any): Promise<Outcome> {
   for (const leg of legs) {
     const fixture = matchFixture(leg.event || '', results)
     if (!fixture || fixture.status !== 'finished') return 'unknown'
-    const o = settleMarket(leg.selection || '', fixture)
+    const o = await settleWithEnrich(leg.selection || '', fixture)
     if (o === 'lost') return 'lost' // one leg lost → whole combo lost
     if (o === 'unknown') return 'unknown'
     if (o === 'won') sawWin = true
@@ -99,7 +112,7 @@ async function main() {
         } else {
           const results = await resultsForBet(bet.sport, bet.date)
           const fixture = matchFixture(bet.event || '', results)
-          if (fixture && fixture.status === 'finished') outcome = settleMarket(bet.market || '', fixture)
+          if (fixture && fixture.status === 'finished') outcome = await settleWithEnrich(bet.market || '', fixture)
         }
       }
 

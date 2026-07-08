@@ -14,6 +14,10 @@ export interface MatchResult {
   awayScore: number
   status: 'finished' | 'postponed' | 'cancelled' | 'in_progress' | 'unknown'
   halfTime?: { home: number; away: number }
+  // Source tag + id, so the worker can lazily enrich the one matched fixture
+  // with exotic data (corners/cards/scorers) from that provider.
+  provider?: string
+  providerId?: string
   // Optional richer data for exotic markets (filled by adapters when available).
   homeCorners?: number
   awayCorners?: number
