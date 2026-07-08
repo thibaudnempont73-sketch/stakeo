@@ -108,8 +108,8 @@ Clés API : secrets serveur (Supabase / GitHub Actions), jamais dans le navigate
 
 ## Phase 3 — Finition & lancement web
 
-- [ ] **Jeu responsable** : limites de mise/dépôt, auto-exclusion, liens d'aide (ANJ / Joueurs Info Service), renforcer tilt/stop-loss.
-- [ ] **RGPD** : export + suppression complète du compte, politique de confidentialité, hébergement UE.
+- [x] **Jeu responsable** ✅ : « faire une pause » (24h/7/30/90 j) qui bloque la saisie de nouveaux paris jusqu'à la fin (écran de pause), liens d'aide **localisés par pays** (`src/lib/help.ts` : Joueurs Info Service, GambleAware, FEJAR, BZgA, TVNGA, Linha Vida…), en plus du stop-loss + alertes tilt existants.
+- [x] **RGPD** ✅ : export JSON (existant) + **suppression totale du compte** (Edge Function `delete-account` en service_role → cascade sur toutes les tables) via modal de confirmation ; **page /privacy** (politique de confidentialité, 6 langues) liée depuis Réglages + pied de landing. À confirmer : région Supabase = UE (choisie à la création du projet).
 - [x] **Notifications** ✅ : à l'ouverture, récap des paris réglés depuis la dernière visite (toast → Paris + net gagné/perdu) ; notifications système optionnelles (opt-in) ; réglage on/off. `src/lib/notify.ts` + `SettlementToast`. (Push app fermée = Phase 4.)
 - [~] **Onboarding & polish PWA** : ✅ installation (bouton + prompt), ✅ icônes PNG 192/512 maskables + apple-touch, ✅ onboarding revu (met en avant scan + règlement auto), ✅ états vides orientés scan/partage. Reste : perfs/accessibilité fines.
 - [ ] Lancement web multilingue (Europe).
