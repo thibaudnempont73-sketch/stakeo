@@ -132,7 +132,7 @@ export function BetForm() {
 
   const save = () => {
     const errs: Record<string, string> = {}
-    if (!event.trim()) errs.event = t('form.err.event')
+    if (type === 'single' && !event.trim()) errs.event = t('form.err.event')
     const stakeNum = parseNum(stake)
     if (!isFinite(stakeNum) || stakeNum <= 0) errs.stake = t('form.err.stake')
     let finalOdds: number
@@ -231,9 +231,11 @@ export function BetForm() {
           </Field>
         </div>
 
-        <Field label={t('form.event')} error={errors.event}>
-          <input type="text" placeholder={t('form.eventPh')} value={event} onChange={(e) => setEvent(e.target.value)} autoFocus />
-        </Field>
+        {type === 'single' && (
+          <Field label={t('form.event')} error={errors.event}>
+            <input type="text" placeholder={t('form.eventPh')} value={event} onChange={(e) => setEvent(e.target.value)} autoFocus />
+          </Field>
+        )}
 
         {type === 'single' ? (
           <>

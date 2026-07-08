@@ -20,7 +20,7 @@ const sb = createClient(URL, KEY, { auth: { persistSession: false } })
 // One Gemini call per distinct bet signature per run (dedupe across users).
 const geminiCache = new Map<string, Promise<GeminiVerdict>>()
 function resolveGemini(bet: any): Promise<GeminiVerdict> {
-  const sig = `${bet.type}|${bet.sport}|${bet.event}|${bet.market}|${(bet.legs ?? []).map((l: any) => l.selection).join(',')}`
+  const sig = `${bet.type}|${bet.sport}|${bet.event}|${bet.market}|${(bet.legs ?? []).map((l: any) => `${l.event ?? ''}:${l.selection}`).join(',')}`
   if (!geminiCache.has(sig)) geminiCache.set(sig, resolveViaGemini(GEMINI_KEY, bet).catch(() => ({ status: 'unknown', confidence: 'low' }) as GeminiVerdict))
   return geminiCache.get(sig)!
 }
@@ -55,6 +55,28 @@ async function resultsForBet(sport: string, dateISO: string): Promise<MatchResul
   return all.flat()
 }
 
+// Settle a combo leg-by-leg with the free ESPN engine, using each leg's own
+// match (leg.event). Returns 'unknown' if any leg can't be resolved yet — the
+// caller then falls back to Gemini for the whole combo. This keeps the API
+// economy: we only ever fetch the matches users actually bet on.
+async function settleComboViaEngine(bet: any): Promise<Outcome> {
+  const legs = (bet.legs ?? []) as Array<{ event?: string; selection: string }>
+  if (!ESPN_SPORT[bet.sport] || legs.length < 2) return 'unknown'
+  if (legs.some((l) => !l.event)) return 'unknown' // need a match per leg to target the API
+  const results = await resultsForBet(bet.sport, bet.date)
+  let sawWin = false
+  for (const leg of legs) {
+    const fixture = matchFixture(leg.event || '', results)
+    if (!fixture || fixture.status !== 'finished') return 'unknown'
+    const o = settleMarket(leg.selection || '', fixture)
+    if (o === 'lost') return 'lost' // one leg lost → whole combo lost
+    if (o === 'unknown') return 'unknown'
+    if (o === 'won') sawWin = true
+    // 'void' legs drop out (odds→1) but don't decide the combo
+  }
+  return sawWin ? 'won' : 'unknown'
+}
+
 async function main() {
   const now = Date.now()
   const { data: bets, error } = await sb.from('bets').select('*').eq('status', 'pending')
@@ -77,11 +99,16 @@ async function main() {
       let outcome: Outcome = 'unknown'
       let via = 'engine'
 
-      // 1. Free path: engine + ESPN adapter (single bets, ESPN-covered sports).
-      if (bet.type !== 'combo' && ESPN_SPORT[bet.sport]) {
-        const results = await resultsForBet(bet.sport, bet.date)
-        const fixture = matchFixture(bet.event || '', results)
-        if (fixture && fixture.status === 'finished') outcome = settleMarket(bet.market || '', fixture)
+      // 1. Free path: engine + ESPN adapter — singles by their event, combos
+      //    leg-by-leg by each leg's match. Only ESPN-covered sports.
+      if (ESPN_SPORT[bet.sport]) {
+        if (bet.type === 'combo') {
+          outcome = await settleComboViaEngine(bet)
+        } else {
+          const results = await resultsForBet(bet.sport, bet.date)
+          const fixture = matchFixture(bet.event || '', results)
+          if (fixture && fixture.status === 'finished') outcome = settleMarket(bet.market || '', fixture)
+        }
       }
 
       // 2. Gemini fallback: combos, uncovered sports, unrecognized/exotic markets.
