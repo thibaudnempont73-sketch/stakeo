@@ -6,7 +6,8 @@
 // the browser. Deploy: `supabase functions deploy scan-bet`.
 
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''
-const MODEL = 'gemini-2.5-flash-lite'
+// Flash (not Flash-Lite): far more reliable at reading multi-leg combos.
+const MODEL = 'gemini-2.5-flash'
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 const SPORTS = [
@@ -22,14 +23,25 @@ const cors = {
 
 const PROMPT = `You extract structured data from a sports betting slip screenshot (Winamax, Betclic, Bet365, Unibet, Stake, PMU, etc.).
 
-Rules:
-- Keep event names, markets and selections in their ORIGINAL language, exactly as written on the slip.
-- Always output DECIMAL (European) odds. Convert fractional or american odds to decimal.
-- For an accumulator (combiné/parlay/multiple), set type="combo" and list every selection in "legs" with its own decimal odds; "odds" is the total (product of legs); leave "market" empty.
-- For a single bet, set type="single", fill "market" with the market+selection, and leave "legs" as [].
-- "stake" is the amount wagered as a number (0 if not visible). "bookmaker" is the app/site name if identifiable, else "".
+FIRST decide single vs combo by COUNTING the matches on the slip:
+- If the slip shows 2 OR MORE distinct matches/events, it is a COMBO (combiné / parlay / accumulator / multiple). Set type="combo".
+- If it shows exactly ONE match, it is a SINGLE. Set type="single".
+
+For a COMBO — this is critical:
+- You MUST include EVERY match as a separate entry in "legs". Never drop a match, never merge two matches into one. If there are 2 matches, "legs" has exactly 2 entries; if 3, then 3; etc.
+- Each leg = one match: put the event + the picked selection in "selection", and that leg's OWN decimal odds in "odds".
+- The top-level "odds" is the TOTAL = the product of all leg odds. "market" stays "".
+- Scan the whole image top to bottom; combos often list matches in a vertical list — include all of them.
+
+For a SINGLE:
+- Fill "market" with the market + selection, and leave "legs" as [].
+
+General rules:
+- Keep event names, markets and selections in their ORIGINAL language, exactly as written.
+- Always output DECIMAL (European) odds. Convert fractional/american odds to decimal.
+- "stake" = amount wagered (0 if not visible). "bookmaker" = app/site name if identifiable, else "".
 - "sport" must be one of: ${SPORTS.join(', ')}.
-- "date" is the event start as "YYYY-MM-DDTHH:MM" if visible, else "".
+- "date" = event start "YYYY-MM-DDTHH:MM" if visible, else "".
 - If the image is NOT a bet slip, set found=false and leave the rest empty/zero.
 
 Respond with ONLY a JSON object of this exact shape, no markdown:
