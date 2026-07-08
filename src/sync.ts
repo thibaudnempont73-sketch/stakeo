@@ -1,6 +1,7 @@
 import { useStore } from './store'
 import { isSupabaseConfigured } from './lib/supabase'
 import { fetchAll, pushAll } from './lib/db'
+import { settleFromCache } from './lib/settleLocal'
 
 let currentUserId: string | null = null
 let hydrating = false
@@ -61,7 +62,9 @@ export function startSync(userId: string) {
     subscribed = true
     useStore.subscribe(schedulePush)
   }
-  hydrate(userId)
+  // Hydrate from cloud, then settle any finished bets instantly from the
+  // shared results cache (free, no wait for the cron). Best-effort.
+  hydrate(userId).then(() => settleFromCache().catch(() => {}))
 }
 
 export function stopSync() {

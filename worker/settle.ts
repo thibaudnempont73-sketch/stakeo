@@ -6,6 +6,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { fetchResults, matchFixture, hasFreeCoverage, enrichFixture } from './adapters'
 import { settleMarket, type MatchResult, type Outcome } from '../src/lib/settle'
+import { matchKey, ymdOf } from '../src/lib/results'
+import { flushCache, type CacheEntry } from './cache'
 import { resolveViaGemini, type GeminiVerdict } from './gemini'
 
 const URL = process.env.SUPABASE_URL
@@ -47,16 +49,40 @@ async function resultsForBet(sport: string, dateISO: string): Promise<MatchResul
   return all.flat()
 }
 
+// Finished fixtures collected this run, to persist into the shared cache so
+// the app can settle instantly and matches are never re-fetched.
+const cacheQueue = new Map<string, CacheEntry>()
+
+function mergeResult(a: MatchResult, b: MatchResult): MatchResult {
+  const out: MatchResult = { ...a, ...b }
+  // Keep exotic fields from whichever source has them.
+  const keys = ['bothTeamsScored', 'homeCorners', 'awayCorners', 'homeCards', 'awayCards', 'scorers', 'players', 'halfTime'] as const
+  for (const k of keys) if ((out as any)[k] == null && (a as any)[k] != null) (out as any)[k] = (a as any)[k]
+  return out
+}
+
+function queueCache(sport: string, dateISO: string, mr: MatchResult): void {
+  if (mr.status !== 'finished') return
+  const d = new Date(dateISO)
+  if (isNaN(d.getTime())) return
+  const id = matchKey(sport, ymdOf(dateISO), mr.home, mr.away)
+  const prev = cacheQueue.get(id)?.mr
+  cacheQueue.set(id, { sport, startsAt: d.toISOString(), mr: prev ? mergeResult(prev, mr) : mr })
+}
+
 // Settle a market from a matched fixture. Score-based markets resolve on the
 // first pass; only if that's 'unknown' do we spend API-Football calls to pull
 // exotic data (corners/cards/scorers) and retry — so the free quota is used
-// solely for the exotic markets that actually need it.
-async function settleWithEnrich(market: string, fixture: MatchResult): Promise<Outcome> {
+// solely for the exotic markets that actually need it. The fixture actually
+// used (enriched when applicable) is cached for the app.
+async function settleWithEnrich(market: string, fixture: MatchResult, sport: string, dateISO: string): Promise<Outcome> {
+  let used = fixture
   let o = settleMarket(market, fixture)
   if (o === 'unknown' && fixture.provider === 'apifootball' && fixture.providerId) {
-    const enriched = await enrichFixture(fixture)
-    o = settleMarket(market, enriched)
+    used = await enrichFixture(fixture)
+    o = settleMarket(market, used)
   }
+  queueCache(sport, dateISO, used)
   return o
 }
 
@@ -73,7 +99,7 @@ async function settleComboViaEngine(bet: any): Promise<Outcome> {
   for (const leg of legs) {
     const fixture = matchFixture(leg.event || '', results)
     if (!fixture || fixture.status !== 'finished') return 'unknown'
-    const o = await settleWithEnrich(leg.selection || '', fixture)
+    const o = await settleWithEnrich(leg.selection || '', fixture, bet.sport, bet.date)
     if (o === 'lost') return 'lost' // one leg lost → whole combo lost
     if (o === 'unknown') return 'unknown'
     if (o === 'won') sawWin = true
@@ -112,7 +138,7 @@ async function main() {
         } else {
           const results = await resultsForBet(bet.sport, bet.date)
           const fixture = matchFixture(bet.event || '', results)
-          if (fixture && fixture.status === 'finished') outcome = await settleWithEnrich(bet.market || '', fixture)
+          if (fixture && fixture.status === 'finished') outcome = await settleWithEnrich(bet.market || '', fixture, bet.sport, bet.date)
         }
       }
 
@@ -144,6 +170,15 @@ async function main() {
     } catch (e) {
       console.warn(`error on bet ${bet.id}: ${(e as Error).message}`)
     }
+  }
+
+  // Persist the finished matches we saw into the shared cache (app reads it to
+  // settle instantly; matches are never re-fetched). Best-effort.
+  try {
+    await flushCache(sb, [...cacheQueue.values()])
+    if (cacheQueue.size) console.log(`cached ${cacheQueue.size} finished match(es)`)
+  } catch (e) {
+    console.warn(`cache flush failed: ${(e as Error).message}`)
   }
 
   console.log(`done — settled ${settled} (${viaGemini} via Gemini), still pending ${skipped}`)
