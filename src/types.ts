@@ -59,6 +59,7 @@ export interface Settings {
   kellyFraction: number
   stopLossDaily: number
   tiltAlert: boolean
+  notifyResults: boolean
 }
 
 export interface AppData {

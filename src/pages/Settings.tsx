@@ -33,6 +33,7 @@ export function Settings() {
   const authUser = useAuth((s) => s.user)
   const signOut = useAuth((s) => s.signOut)
   const { canInstall, promptInstall, isIOS, isStandalone } = useInstall()
+  const [notifPerm, setNotifPerm] = useState<string>(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported')
 
   return (
     <div className="page">
@@ -144,6 +145,28 @@ export function Settings() {
             <span className="field-hint">{t('settings.tiltHint')}</span>
           </div>
         </label>
+      </section>
+
+      <section className="card settings-card">
+        <h2 className="card-title">{t('settings.notifications')}</h2>
+        <label className="check-row">
+          <input type="checkbox" checked={settings.notifyResults} onChange={(e) => updateSettings({ notifyResults: e.target.checked })} />
+          <div>
+            <span>{t('settings.notifyResults')}</span>
+            <span className="field-hint">{t('settings.notifyResultsHint')}</span>
+          </div>
+        </label>
+        {'Notification' in window &&
+          (notifPerm === 'granted' ? (
+            <p className="field-hint share-ok">✓ {t('settings.notifOn')}</p>
+          ) : (
+            <button
+              className="btn"
+              onClick={() => Notification.requestPermission().then((p) => setNotifPerm(p))}
+            >
+              <Icon name="alert" size={16} /> {t('settings.enableNotif')}
+            </button>
+          ))}
       </section>
 
       <section className="card settings-card">

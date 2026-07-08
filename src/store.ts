@@ -14,6 +14,7 @@ const defaultSettings = (): Settings => ({
   kellyFraction: 0.25,
   stopLossDaily: 0,
   tiltAlert: true,
+  notifyResults: true,
 })
 
 const STORAGE_KEY = 'stakeo-data'
