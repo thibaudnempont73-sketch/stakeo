@@ -76,7 +76,7 @@ const KW = {
   under: ['moins de', 'under', '- de', 'menos de', 'unter', 'sotto', 'inferiore'],
   bttsYes: ['les deux marquent', 'both teams to score', 'btts', 'ambos marcan', 'beide treffen', 'entrambe segnano', 'ambas marcam', 'oui', 'yes', 'si', 'ja'],
   bttsNo: ['non', 'no', 'nein', 'nao', 'não'],
-  win: ['victoire', 'vainqueur', 'gagne', 'wins', 'win', 'winner', 'gana', 'sieg', 'gewinnt', 'vince', 'vitoria', 'vitória', 'vence'],
+  win: ['victoire', 'vainqueur', 'remporte', 'gagne', 'wins', 'win', 'winner', 'moneyline', 'gana', 'sieg', 'gewinnt', 'vince', 'vitoria', 'vitória', 'vence'],
   doubleChance: ['double chance', 'doppia chance', 'doble oportunidad', 'doppelte chance', 'dupla hipotese'],
   goals: ['but', 'buts', 'goal', 'goals', 'gol', 'goles', 'tore', 'reti', 'golos'],
   corners: ['corner', 'corners', 'coup de pied de coin', 'saque de esquina', 'ecke', 'calcio d angolo', 'pontape de canto'],
