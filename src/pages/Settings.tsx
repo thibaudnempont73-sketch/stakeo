@@ -6,8 +6,11 @@ import { currentBalance } from '../lib/stats'
 import { fmtMoney, fmtDate, todayISO } from '../lib/format'
 import { Field, Modal, Segmented } from '../components/ui'
 import { Icon } from '../components/Icon'
+import { Link } from 'react-router-dom'
 import { useAuth, isSupabaseConfigured } from '../auth'
 import { useInstall } from '../lib/pwa'
+import { helpResources } from '../lib/help'
+import { deleteAccount } from '../lib/db'
 import type { OddsFormat, StakingMethod, Theme } from '../types'
 
 function download(filename: string, content: string, mime: string) {
@@ -34,6 +37,9 @@ export function Settings() {
   const signOut = useAuth((s) => s.signOut)
   const { canInstall, promptInstall, isIOS, isStandalone } = useInstall()
   const [notifPerm, setNotifPerm] = useState<string>(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported')
+  const [showDelete, setShowDelete] = useState(false)
+  const onBreak = !!settings.breakUntil && Date.parse(settings.breakUntil) > Date.now()
+  const startBreak = (days: number) => updateSettings({ breakUntil: new Date(Date.now() + days * 86400000).toISOString() })
 
   return (
     <div className="page">
@@ -170,6 +176,45 @@ export function Settings() {
       </section>
 
       <section className="card settings-card">
+        <h2 className="card-title">{t('settings.responsible')}</h2>
+        <p className="field-hint">{t('settings.responsibleHint')}</p>
+        {onBreak ? (
+          <div className="break-active">
+            <Icon name="shield" size={18} />
+            <div>
+              <span>{t('settings.onBreakUntil', { date: fmtDate(settings.breakUntil!, lang) })}</span>
+              <button className="btn-link" onClick={() => updateSettings({ breakUntil: undefined })}>
+                {t('settings.endBreak')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <span className="field-label">{t('settings.takeBreak')}</span>
+            <div className="chip-row">
+              {[1, 7, 30, 90].map((d) => (
+                <button key={d} className="chip" onClick={() => startBreak(d)}>
+                  {d === 1 ? '24h' : `${d} ${t('common.days')}`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="help-links">
+          <span className="field-label">{t('settings.needHelp')}</span>
+          {helpResources(lang).map((r) => (
+            <a key={r.url} className="help-link" href={r.url} target="_blank" rel="noreferrer">
+              <Icon name="globe" size={15} />
+              <span>
+                {r.name}
+                {r.phone ? ` · ${r.phone}` : ''}
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="card settings-card">
         <h2 className="card-title">{t('settings.bankrolls')}</h2>
         <div className="bankroll-list">
           {bankrolls.map((b) => {
@@ -237,6 +282,22 @@ export function Settings() {
         </section>
       )}
 
+      <section className="card settings-card">
+        <h2 className="card-title">{t('settings.privacy')}</h2>
+        <Link className="privacy-link" to="/privacy">
+          <Icon name="shield" size={16} /> {t('settings.privacyPolicy')}
+          <Icon name="chevronRight" size={16} />
+        </Link>
+        {isSupabaseConfigured && authUser && (
+          <>
+            <p className="field-hint">{t('settings.deleteAccountHint')}</p>
+            <button className="btn btn-danger" onClick={() => setShowDelete(true)}>
+              <Icon name="trash" size={16} /> {t('settings.deleteAccount')}
+            </button>
+          </>
+        )}
+      </section>
+
       <section className="card settings-card about-card">
         <h2 className="card-title">{t('settings.about')}</h2>
         <div className="about-row">
@@ -247,7 +308,55 @@ export function Settings() {
       </section>
 
       {managing && <BankrollModal id={managing === 'new' ? null : managing} onClose={() => setManaging(null)} />}
+      {showDelete && <DeleteAccountModal onClose={() => setShowDelete(false)} onDeleted={signOut} />}
     </div>
+  )
+}
+
+function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDeleted: () => void }) {
+  const { t } = useI18n()
+  const [confirmed, setConfirmed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(false)
+
+  const run = async () => {
+    setBusy(true)
+    setError(false)
+    try {
+      await deleteAccount()
+    } catch {
+      setError(true)
+      setBusy(false)
+      return
+    }
+    // Deletion succeeded — sign out (the session is now invalid, so ignore any
+    // error here). The app clears local data and redirects to login.
+    try {
+      await onDeleted()
+    } catch {
+      /* session already gone */
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={t('settings.deleteConfirmTitle')}>
+      <div className="form-grid">
+        <p className="delete-warning">{t('settings.deleteConfirmBody')}</p>
+        <label className="check-row">
+          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+          <span>{t('settings.deleteConfirmCheck')}</span>
+        </label>
+        {error && <p className="field-error">{t('settings.deleteError')}</p>}
+        <div className="form-actions">
+          <button className="btn" onClick={onClose} disabled={busy}>
+            {t('common.cancel')}
+          </button>
+          <button className="btn btn-danger" onClick={run} disabled={!confirmed || busy}>
+            {busy ? t('settings.deleting') : t('settings.deleteFinal')}
+          </button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 

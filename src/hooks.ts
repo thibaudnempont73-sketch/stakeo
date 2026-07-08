@@ -19,6 +19,14 @@ interface UIState {
   closeDetail: () => void
   scanBlob: Blob | null
   setScanBlob: (b: Blob | null) => void
+  breakNoticeOpen: boolean
+  setBreakNotice: (open: boolean) => void
+}
+
+/** Responsible-gambling break: true while a "take a break" period is active. */
+export function isOnBreak(): boolean {
+  const until = useStore.getState().settings.breakUntil
+  return !!until && Date.parse(until) > Date.now()
 }
 
 export const useUI = create<UIState>((set) => ({
@@ -27,13 +35,22 @@ export const useUI = create<UIState>((set) => ({
   formOpen: false,
   editingId: null,
   prefill: null,
-  openForm: (opts) => set({ formOpen: true, editingId: opts?.editingId ?? null, prefill: opts?.prefill ?? null }),
+  openForm: (opts) => {
+    // Block logging NEW bets during a self-imposed break (editing stays allowed).
+    if (!opts?.editingId && isOnBreak()) {
+      set({ breakNoticeOpen: true })
+      return
+    }
+    set({ formOpen: true, editingId: opts?.editingId ?? null, prefill: opts?.prefill ?? null })
+  },
   closeForm: () => set({ formOpen: false, editingId: null, prefill: null }),
   detailId: null,
   openDetail: (id) => set({ detailId: id }),
   closeDetail: () => set({ detailId: null }),
   scanBlob: null,
   setScanBlob: (scanBlob) => set({ scanBlob }),
+  breakNoticeOpen: false,
+  setBreakNotice: (breakNoticeOpen) => set({ breakNoticeOpen }),
 }))
 
 export function useActiveBankroll() {

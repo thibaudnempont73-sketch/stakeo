@@ -116,3 +116,21 @@ export async function pushAll(userId: string, snap: Snapshot): Promise<void> {
   await mirror('bets', userId, snap.bets.map((b) => betRow(b, userId)))
   await mirror('transactions', userId, snap.transactions.map((t) => txRow(t, userId)))
 }
+
+// ── RGPD: permanently delete the account + all its data ─────
+// Calls the delete-account Edge Function (service_role deletes the auth user,
+// which cascades to every user table). The caller signs out afterwards.
+export async function deleteAccount(): Promise<void> {
+  const sb = client()
+  const { data: sess } = await sb.auth.getSession()
+  const token = sess.session?.access_token
+  if (!token) throw new Error('not_authenticated')
+  const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || ''
+  const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || ''
+  const res = await fetch(`${url}/functions/v1/delete-account`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, apikey: anon, 'Content-Type': 'application/json' },
+    body: '{}',
+  })
+  if (!res.ok) throw new Error('delete_failed')
+}

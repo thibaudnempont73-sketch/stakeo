@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
 import { useStore } from './store'
 import { useUI, useActiveBankroll, type Tab } from './hooks'
-import { fmtMoney } from './lib/format'
+import { fmtMoney, fmtDate } from './lib/format'
 import { getLastSeen, markSeen, settledSince, type UnseenSummary } from './lib/notify'
+import { helpResources } from './lib/help'
+import { Modal } from './components/ui'
 import { useAuth, isSupabaseConfigured } from './auth'
 import { startSync, stopSync } from './sync'
 import { I18nContext, makeT, useI18n } from './i18n'
@@ -13,6 +15,7 @@ import { Analytics } from './pages/Analytics'
 import { Settings } from './pages/Settings'
 import { Onboarding } from './pages/Onboarding'
 import { Landing } from './pages/Landing'
+import { Privacy } from './pages/Privacy'
 import { Auth } from './pages/Auth'
 import { BetForm } from './components/BetForm'
 import { BetDetail } from './components/bets'
@@ -88,6 +91,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/login" element={authed ? <Navigate to="/app" replace /> : <Auth mode="signin" />} />
       <Route path="/signup" element={authed ? <Navigate to="/app" replace /> : <Auth mode="signup" />} />
       <Route path="/app/*" element={authed ? hasBankroll ? <Shell /> : <Onboarding /> : <Navigate to="/login" replace />} />
@@ -113,6 +117,7 @@ function Shell() {
   const formOpen = useUI((s) => s.formOpen)
   const editingId = useUI((s) => s.editingId)
   const detailId = useUI((s) => s.detailId)
+  const breakNoticeOpen = useUI((s) => s.breakNoticeOpen)
   const signOut = useAuth((s) => s.signOut)
 
   const navItems: { tab: Tab; icon: string; label: string }[] = [
@@ -174,7 +179,48 @@ function Shell() {
       {formOpen && <BetForm key={editingId || 'new'} />}
       {detailId && <BetDetail />}
       <SettlementToast />
+      {breakNoticeOpen && <BreakNotice />}
     </div>
+  )
+}
+
+// Shown when the user tries to log a new bet during a self-imposed break.
+function BreakNotice() {
+  const { t, lang } = useI18n()
+  const setBreakNotice = useUI((s) => s.setBreakNotice)
+  const setTab = useUI((s) => s.setTab)
+  const until = useStore((s) => s.settings.breakUntil)
+  return (
+    <Modal open onClose={() => setBreakNotice(false)} title={t('break.title')}>
+      <div className="break-notice">
+        <p>{t('break.body', { date: until ? fmtDate(until, lang) : '' })}</p>
+        <div className="help-links">
+          {helpResources(lang).map((r) => (
+            <a key={r.url} className="help-link" href={r.url} target="_blank" rel="noreferrer">
+              <Icon name="globe" size={15} />
+              <span>
+                {r.name}
+                {r.phone ? ` · ${r.phone}` : ''}
+              </span>
+            </a>
+          ))}
+        </div>
+        <div className="form-actions">
+          <button className="btn" onClick={() => setBreakNotice(false)}>
+            {t('common.close')}
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setTab('settings')
+              setBreakNotice(false)
+            }}
+          >
+            {t('break.manage')}
+          </button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 

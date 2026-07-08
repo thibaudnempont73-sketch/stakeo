@@ -60,6 +60,7 @@ export interface Settings {
   stopLossDaily: number
   tiltAlert: boolean
   notifyResults: boolean
+  breakUntil?: string // responsible-gambling "take a break" — ISO end date
 }
 
 export interface AppData {

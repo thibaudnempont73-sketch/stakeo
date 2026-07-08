@@ -132,6 +132,9 @@ export function Landing() {
           <span>{t('app.name')}</span>
         </div>
         <p>{t('landing.footer.disclaimer')}</p>
+        <Link className="lp-footer-link" to="/privacy">
+          {t('settings.privacyPolicy')}
+        </Link>
       </footer>
     </div>
   )
