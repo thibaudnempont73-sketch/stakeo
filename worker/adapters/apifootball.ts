@@ -22,6 +22,18 @@ async function afGet(path: string): Promise<any[]> {
   return data?.response ?? []
 }
 
+// The Free plan only serves /fixtures?date= for a today±1 window (UTC). We
+// settle matches within hours of kickoff, so this always covers real bets —
+// and skipping older dates avoids burning the 100/day quota on plan errors.
+const MS = 86400000
+function withinFreeWindow(dateDash: string): boolean {
+  const target = Date.parse(`${dateDash}T00:00:00Z`)
+  if (isNaN(target)) return false
+  const today0 = Math.floor(Date.now() / MS) * MS
+  const diffDays = Math.round((target - today0) / MS)
+  return diffDays >= -1 && diffDays <= 1
+}
+
 const FINISHED = new Set(['FT', 'AET', 'PEN'])
 
 function normStatus(short: string | undefined): MatchResult['status'] {
@@ -33,7 +45,7 @@ function normStatus(short: string | undefined): MatchResult['status'] {
 
 /** List a date's football fixtures (YYYY-MM-DD) with ids and final scores. */
 export async function fetchApiFootball(dateDash: string): Promise<MatchResult[]> {
-  if (!KEY) return []
+  if (!KEY || !withinFreeWindow(dateDash)) return []
   const rows = await afGet(`/fixtures?date=${dateDash}`)
   const out: MatchResult[] = []
   for (const r of rows) {
