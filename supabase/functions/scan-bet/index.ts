@@ -116,7 +116,7 @@ Deno.serve(async (req: Request) => {
   const userId = await getUserId(authHeader)
   if (!userId) return json({ error: 'unauthorized' }, 401)
 
-  let body: { image?: string; mediaType?: string }
+  let body: { image?: string; mediaType?: string; type?: 'single' | 'combo' }
   try {
     body = await req.json()
   } catch {
@@ -124,6 +124,15 @@ Deno.serve(async (req: Request) => {
   }
   if (!body.image) return json({ error: 'no_image' }, 400)
   if (body.image.length > MAX_IMAGE_B64) return json({ error: 'too_large' }, 413)
+
+  // Honour the user's Single/Combo choice from the form when provided.
+  const hint =
+    body.type === 'combo'
+      ? '\n\nUSER INTENT: The user is logging a COMBO. Treat EVERY distinct match/selection visible in the image as a leg of ONE combo — return type="combo" with all legs, even if no combined total is shown (the app computes it).'
+      : body.type === 'single'
+        ? '\n\nUSER INTENT: The user is logging a SINGLE bet. Return type="single" with the one main selection (if several are shown, take the first).'
+        : ''
+  const prompt = PROMPT + hint
 
   // Generous per-user daily guard (fail-open if the RPC isn't installed yet).
   const used = await bumpUsage(authHeader!)
@@ -138,7 +147,7 @@ Deno.serve(async (req: Request) => {
           {
             parts: [
               { inline_data: { mime_type: body.mediaType || 'image/jpeg', data: body.image } },
-              { text: PROMPT },
+              { text: prompt },
             ],
           },
         ],

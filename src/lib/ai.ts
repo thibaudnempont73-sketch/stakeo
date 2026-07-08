@@ -71,8 +71,14 @@ export interface ExtractedBet {
   date: string
 }
 
-/** Scan a bet-slip image via the server-side proxy (Gemini key never in the browser). */
-export async function extractBetFromImage(imageBase64: string, mediaType: string): Promise<ExtractedBet> {
+/** Scan a bet-slip image via the server-side proxy (Gemini key never in the browser).
+ * `betType` passes the user's Single/Combo choice so the scanner honours it
+ * (e.g. treat every match in the image as legs of one combo). */
+export async function extractBetFromImage(
+  imageBase64: string,
+  mediaType: string,
+  betType?: 'single' | 'combo',
+): Promise<ExtractedBet> {
   if (!SUPABASE_URL || !supabase) throw new AIError('notConfigured')
   const { data: sess } = await supabase.auth.getSession()
   const token = sess.session?.access_token || ANON
@@ -86,7 +92,7 @@ export async function extractBetFromImage(imageBase64: string, mediaType: string
         Authorization: `Bearer ${token}`,
         apikey: ANON,
       },
-      body: JSON.stringify({ image: imageBase64, mediaType }),
+      body: JSON.stringify({ image: imageBase64, mediaType, type: betType }),
     })
   } catch {
     throw new AIError('network')
