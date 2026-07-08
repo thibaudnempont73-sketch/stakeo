@@ -207,7 +207,7 @@ export const en = {
   'privacy.s4b': 'You can export all your data as JSON, and permanently delete your account and data at any time from Settings → Privacy.',
   'privacy.s5t': 'Responsible gambling',
   'privacy.s5b': 'Stakeo only tracks bets — it never takes bets or gives betting advice. If gambling stops being fun, use the help resources in Settings.',
-  'privacy.contact': 'Questions? Contact us at contact@stakeo.app',
+  'privacy.contact': 'Questions? Contact us at support@stakeo.app',
   'settings.bankrolls': 'Bankrolls',
   'settings.active': 'Active',
   'settings.newBankroll': 'New bankroll',

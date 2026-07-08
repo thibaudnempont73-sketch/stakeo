@@ -208,7 +208,7 @@ export const de: Dict = {
   'privacy.s4b': 'Du kannst alle deine Daten als JSON exportieren und dein Konto samt Daten jederzeit unter Einstellungen → Datenschutz endgültig löschen.',
   'privacy.s5t': 'Verantwortungsvolles Spielen',
   'privacy.s5b': 'Stakeo verfolgt nur Wetten — es nimmt keine Wetten an und gibt keine Tipps. Wenn Spielen kein Spaß mehr ist, nutze die Hilfsangebote in den Einstellungen.',
-  'privacy.contact': 'Fragen? Schreib uns an contact@stakeo.app',
+  'privacy.contact': 'Fragen? Schreib uns an support@stakeo.app',
   'settings.bankrolls': 'Bankrolls',
   'settings.active': 'Aktiv',
   'settings.newBankroll': 'Neue Bankroll',

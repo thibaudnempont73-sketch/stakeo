@@ -208,7 +208,7 @@ export const es: Dict = {
   'privacy.s4b': 'Puedes exportar todos tus datos en JSON y eliminar permanentemente tu cuenta y datos en cualquier momento desde Ajustes → Privacidad.',
   'privacy.s5t': 'Juego responsable',
   'privacy.s5b': 'Stakeo solo registra apuestas — no acepta apuestas ni da consejos. Si el juego deja de ser diversión, usa los recursos de ayuda en Ajustes.',
-  'privacy.contact': '¿Preguntas? Escríbenos a contact@stakeo.app',
+  'privacy.contact': '¿Preguntas? Escríbenos a support@stakeo.app',
   'settings.bankrolls': 'Bankrolls',
   'settings.active': 'Activo',
   'settings.newBankroll': 'Nuevo bankroll',
