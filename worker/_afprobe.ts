@@ -1,39 +1,34 @@
-// TEMPORARY probe — verifies the API_FOOTBALL_KEY secret works and reports
-// what the current plan returns (season limits matter on the free tier).
-// Removed after we read the CI logs.
-import { fetchApiFootball, enrich } from './adapters/apifootball'
+// TEMPORARY probe — inspect raw API-Football responses (errors / results).
+import { enrich } from './adapters/apifootball'
 
 const KEY = process.env.API_FOOTBALL_KEY || ''
 const BASE = 'https://v3.football.api-sports.io'
 
-async function status() {
-  const res = await fetch(`${BASE}/status`, { headers: { 'x-apisports-key': KEY } })
-  console.log('status HTTP', res.status)
-  console.log(JSON.stringify((await res.json())?.response ?? {}, null, 0))
-}
-
-async function day(label: string, dateDash: string) {
-  const r = await fetchApiFootball(dateDash)
-  const fin = r.filter((x) => x.status === 'finished')
-  console.log(`\n[${label}] ${dateDash}: ${r.length} fixtures, ${fin.length} finished`)
-  for (const g of fin.slice(0, 3)) console.log(`  ${g.home} ${g.homeScore}-${g.awayScore} ${g.away} (id=${g.providerId})`)
-  return fin
+async function raw(path: string) {
+  const res = await fetch(`${BASE}${path}`, { headers: { 'x-apisports-key': KEY } })
+  const j: any = await res.json()
+  console.log(`\nGET ${path} -> HTTP ${res.status}`)
+  console.log('  errors:', JSON.stringify(j?.errors ?? {}))
+  console.log('  results:', j?.results, '| paging:', JSON.stringify(j?.paging ?? {}))
+  return j
 }
 
 async function main() {
-  console.log('key present:', !!KEY)
-  await status()
-  await day('2023', '2023-04-01')
-  const recent = await day('2026-recent', '2026-07-05')
-  const sample = (recent[0] ?? (await day('2023-again', '2023-04-01'))[0])
-  if (sample) {
-    const e = await enrich(sample)
-    console.log('\nenriched sample:', JSON.stringify({
-      match: `${e.home} v ${e.away}`,
-      corners: [e.homeCorners, e.awayCorners],
-      cards: [e.homeCards, e.awayCards],
-      scorers: e.scorers,
-    }))
+  await raw('/fixtures?date=2023-04-01')
+  await raw('/fixtures?league=39&season=2023')
+  const j = await raw('/fixtures?league=39&season=2023&from=2023-04-01&to=2023-04-08')
+  const first = (j?.response ?? [])[0]
+  if (first) {
+    const id = String(first.fixture?.id)
+    console.log('  sample fixture:', first.teams?.home?.name, 'v', first.teams?.away?.name, `(id=${id}, ${first.fixture?.status?.short})`)
+    const e = await enrich({
+      home: first.teams?.home?.name, away: first.teams?.away?.name,
+      homeScore: first.goals?.home ?? 0, awayScore: first.goals?.away ?? 0,
+      status: 'finished', provider: 'apifootball', providerId: id,
+    })
+    console.log('  enriched:', JSON.stringify({ corners: [e.homeCorners, e.awayCorners], cards: [e.homeCards, e.awayCards], scorers: e.scorers }))
   }
+  await raw('/fixtures?date=2024-04-06')
+  await raw('/fixtures?date=2025-04-05')
 }
 main().catch((err) => { console.error('probe error:', err.message); process.exit(1) })
