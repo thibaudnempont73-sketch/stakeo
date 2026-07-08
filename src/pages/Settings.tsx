@@ -38,6 +38,7 @@ export function Settings() {
   const { canInstall, promptInstall, isIOS, isStandalone } = useInstall()
   const [notifPerm, setNotifPerm] = useState<string>(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported')
   const [showDelete, setShowDelete] = useState(false)
+  const [showInstall, setShowInstall] = useState(false)
   const onBreak = !!settings.breakUntil && Date.parse(settings.breakUntil) > Date.now()
   const startBreak = (days: number) => updateSettings({ breakUntil: new Date(Date.now() + days * 86400000).toISOString() })
 
@@ -50,13 +51,16 @@ export function Settings() {
       <section className="card settings-card share-card">
         <h2 className="card-title">{t('settings.share')}</h2>
         <p className="field-hint">{t('settings.shareHint')}</p>
-        {canInstall && (
-          <button className="btn btn-primary" onClick={promptInstall}>
-            <Icon name="download" size={16} /> {t('settings.installApp')}
-          </button>
+        {isStandalone ? (
+          <p className="field-hint share-ok">✓ {t('settings.shareInstalled')}</p>
+        ) : (
+          <>
+            <button className="btn btn-primary" onClick={canInstall ? promptInstall : () => setShowInstall(true)}>
+              <Icon name="download" size={16} /> {t('settings.installApp')}
+            </button>
+            <p className="field-hint share-platform">{isIOS ? t('settings.shareIos') : t('settings.shareAndroid')}</p>
+          </>
         )}
-        <p className="field-hint share-platform">{isIOS ? t('settings.shareIos') : t('settings.shareAndroid')}</p>
-        {isStandalone && <p className="field-hint share-ok">✓ {t('settings.shareInstalled')}</p>}
       </section>
 
       <section className="card settings-card">
@@ -309,7 +313,38 @@ export function Settings() {
 
       {managing && <BankrollModal id={managing === 'new' ? null : managing} onClose={() => setManaging(null)} />}
       {showDelete && <DeleteAccountModal onClose={() => setShowDelete(false)} onDeleted={signOut} />}
+      {showInstall && <InstallHelpModal onClose={() => setShowInstall(false)} />}
     </div>
+  )
+}
+
+// Shown when the browser doesn't offer an automatic install prompt — manual
+// steps per platform (iPhone can't auto-prompt; desktop hides it in the bar).
+function InstallHelpModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
+  return (
+    <Modal open onClose={onClose} title={t('settings.installApp')}>
+      <div className="install-help">
+        <p className="field-hint">{t('install.intro')}</p>
+        <div className="install-step">
+          <Icon name="globe" size={16} />
+          <span>{t('install.android')}</span>
+        </div>
+        <div className="install-step">
+          <Icon name="globe" size={16} />
+          <span>{t('install.ios')}</span>
+        </div>
+        <div className="install-step">
+          <Icon name="globe" size={16} />
+          <span>{t('install.desktop')}</span>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-primary" onClick={onClose}>
+            {t('common.close')}
+          </button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 

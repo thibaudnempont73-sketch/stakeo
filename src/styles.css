@@ -1696,6 +1696,28 @@ textarea {
   color: var(--text2);
 }
 
+.install-help {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.install-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: var(--bg0);
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+}
+
+.install-step svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
 .delete-warning {
   font-size: 13.5px;
   color: var(--text2);
