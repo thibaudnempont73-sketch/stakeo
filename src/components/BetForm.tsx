@@ -84,7 +84,10 @@ export function BetForm() {
     setScanError(null)
     try {
       const { data, mediaType } = await compressImage(blob)
-      applyExtracted(await extractBetFromImage(data, mediaType, type))
+      // Only force "combo" when the user explicitly picked it (e.g. prediction
+      // cards with no combined total). Otherwise auto-detect — so a shared
+      // combo isn't forced to single just because the form opened on Single.
+      applyExtracted(await extractBetFromImage(data, mediaType, type === 'combo' ? 'combo' : undefined))
     } catch (err) {
       const kind = err instanceof AIError ? err.kind : 'parse'
       setScanError(t(kind === 'badKey' ? 'ai.badKey' : kind === 'network' ? 'ai.netError' : kind === 'rate' ? 'ai.rateLimit' : 'ai.scanError'))
