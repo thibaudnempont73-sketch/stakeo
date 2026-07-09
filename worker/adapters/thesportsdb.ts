@@ -47,6 +47,7 @@ export async function fetchSportsDb(sportName: string, dateDash: string): Promis
       homeScore: hs == null || hs === '' ? 0 : Number(hs),
       awayScore: as == null || as === '' ? 0 : Number(as),
       status: normStatus(e.strStatus),
+      startsAt: e.strTimestamp || (e.dateEvent ? `${e.dateEvent}T${e.strTime || '00:00:00'}` : undefined),
     })
   }
   return out

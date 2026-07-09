@@ -72,6 +72,7 @@ export async function fetchEspn(sportPath: string, dateYYYYMMDD: string): Promis
       homeScore: Number(home.score ?? 0),
       awayScore: Number(away.score ?? 0),
       status: normStatus(comp.status?.type?.name),
+      startsAt: e.date ?? comp.date ?? undefined,
     })
   }
   return out

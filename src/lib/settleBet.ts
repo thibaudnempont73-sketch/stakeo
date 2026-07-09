@@ -12,7 +12,7 @@ export function settleBetFromResults(bet: Bet, results: MatchResult[]): Outcome 
     if (legs.length < 2 || legs.some((l) => !l.event)) return 'unknown'
     let sawWin = false
     for (const leg of legs) {
-      const fixture = matchFixture(leg.event || '', results)
+      const fixture = matchFixture(leg.event || '', results, bet.date)
       if (!fixture || fixture.status !== 'finished') return 'unknown'
       const o = settleMarket(leg.selection || '', fixture)
       if (o === 'lost') return 'lost' // one leg lost → whole combo lost
@@ -22,7 +22,7 @@ export function settleBetFromResults(bet: Bet, results: MatchResult[]): Outcome 
     }
     return sawWin ? 'won' : 'unknown'
   }
-  const fixture = matchFixture(bet.event || '', results)
+  const fixture = matchFixture(bet.event || '', results, bet.date)
   if (!fixture || fixture.status !== 'finished') return 'unknown'
   return settleMarket(bet.market || '', fixture)
 }

@@ -63,9 +63,12 @@ function mergeResult(a: MatchResult, b: MatchResult): MatchResult {
 
 function queueCache(sport: string, dateISO: string, mr: MatchResult): void {
   if (mr.status !== 'finished') return
-  const d = new Date(dateISO)
+  // Key by the real game date (falls back to the bet date), so series games on
+  // consecutive days are cached as distinct fixtures.
+  const when = mr.startsAt || dateISO
+  const d = new Date(when)
   if (isNaN(d.getTime())) return
-  const id = matchKey(sport, ymdOf(dateISO), mr.home, mr.away)
+  const id = matchKey(sport, ymdOf(when), mr.home, mr.away)
   const prev = cacheQueue.get(id)?.mr
   cacheQueue.set(id, { sport, startsAt: d.toISOString(), mr: prev ? mergeResult(prev, mr) : mr })
 }
@@ -97,7 +100,7 @@ async function settleComboViaEngine(bet: any): Promise<Outcome> {
   const results = await resultsForBet(bet.sport, bet.date)
   let sawWin = false
   for (const leg of legs) {
-    const fixture = matchFixture(leg.event || '', results)
+    const fixture = matchFixture(leg.event || '', results, bet.date)
     if (!fixture || fixture.status !== 'finished') return 'unknown'
     const o = await settleWithEnrich(leg.selection || '', fixture, bet.sport, bet.date)
     if (o === 'lost') return 'lost' // one leg lost → whole combo lost
@@ -137,7 +140,7 @@ async function main() {
           outcome = await settleComboViaEngine(bet)
         } else {
           const results = await resultsForBet(bet.sport, bet.date)
-          const fixture = matchFixture(bet.event || '', results)
+          const fixture = matchFixture(bet.event || '', results, bet.date)
           if (fixture && fixture.status === 'finished') outcome = await settleWithEnrich(bet.market || '', fixture, bet.sport, bet.date)
         }
       }

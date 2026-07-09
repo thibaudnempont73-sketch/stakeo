@@ -15,6 +15,7 @@ export interface MatchResult {
   homeScore: number
   awayScore: number
   status: 'finished' | 'postponed' | 'cancelled' | 'in_progress' | 'unknown'
+  startsAt?: string // ISO kickoff — used to pick the right game when teams meet on consecutive days (series)
   halfTime?: { home: number; away: number }
   // Source tag + id, so the worker can lazily enrich the one matched fixture
   // with exotic data (corners/cards/scorers) from that provider.

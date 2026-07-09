@@ -60,6 +60,7 @@ export async function fetchApiFootball(dateDash: string): Promise<MatchResult[]>
       homeScore: hg == null ? 0 : Number(hg),
       awayScore: ag == null ? 0 : Number(ag),
       status: normStatus(r?.fixture?.status?.short),
+      startsAt: r?.fixture?.date ?? undefined,
       bothTeamsScored: Number(hg) > 0 && Number(ag) > 0,
       provider: 'apifootball',
       providerId: String(r?.fixture?.id ?? ''),

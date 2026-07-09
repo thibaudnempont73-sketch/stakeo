@@ -38,6 +38,7 @@ export function rowToResult(fx: any, rs: any): MatchResult {
     homeScore: rs?.home_score ?? 0,
     awayScore: rs?.away_score ?? 0,
     status: (rs?.status ?? 'finished') as MatchResult['status'],
+    startsAt: fx?.starts_at ?? undefined,
     bothTeamsScored: d.bothTeamsScored,
     homeCorners: d.homeCorners,
     awayCorners: d.awayCorners,

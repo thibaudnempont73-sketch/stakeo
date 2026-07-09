@@ -54,18 +54,27 @@ export function teamInText(team: string, text: string): boolean {
   return subset(tt, xt) || subset(xt, tt)
 }
 
-/** Find the game matching a bet's event text ("Memphis – Minnesota") in a list. */
-export function matchFixture(eventText: string, results: MatchResult[]): MatchResult | null {
+/** Find the game matching a bet's event text ("Memphis – Minnesota") in a list.
+ * When `nearISO` is given (the bet's kickoff), and the two teams meet on several
+ * days (a series), return the game CLOSEST to that date — not just the first. */
+export function matchFixture(eventText: string, results: MatchResult[], nearISO?: string): MatchResult | null {
   const parts = splitEvent(eventText)
   if (parts.length < 2) return null
   const [a, b] = parts
-  for (const r of results) {
+  const matches = results.filter((r) => {
     const aHome = teamMatches(a, r.home)
     const aAway = teamMatches(a, r.away)
     const bHome = teamMatches(b, r.home)
     const bAway = teamMatches(b, r.away)
     // Each side must map to a different team (a→home & b→away, or the reverse).
-    if ((aHome && bAway) || (aAway && bHome)) return r
+    return (aHome && bAway) || (aAway && bHome)
+  })
+  if (!matches.length) return null
+  const near = nearISO ? Date.parse(nearISO) : NaN
+  if (isNaN(near) || matches.length === 1) return matches[0]
+  const dist = (r: MatchResult) => {
+    const t = r.startsAt ? Date.parse(r.startsAt) : NaN
+    return isNaN(t) ? Infinity : Math.abs(t - near)
   }
-  return null
+  return matches.reduce((best, r) => (dist(r) < dist(best) ? r : best), matches[0])
 }
