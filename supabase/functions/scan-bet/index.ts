@@ -16,7 +16,9 @@
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-const MODEL = 'gemini-2.5-flash-lite'
+// Try the cheap model first; escalate to the stronger one only when it can't
+// read the slip (busy/stylized bookmaker share cards trip up flash-lite).
+const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 const DAILY_CAP = 200 // scans/user/day — abuse guard, not a usage limit
@@ -102,6 +104,29 @@ General rules:
 Respond with ONLY a JSON object of this exact shape, no markdown:
 {"found":boolean,"event":string,"sport":string,"market":string,"type":"single"|"combo","legs":[{"event":string,"selection":string,"odds":number}],"odds":number,"stake":number,"bookmaker":string,"isLive":boolean,"date":string}`
 
+type GeminiCall = { status: number; json: any | null }
+
+async function callGemini(model: string, image: string, mediaType: string, prompt: string): Promise<GeminiCall> {
+  const res = await fetch(`${BASE}/${model}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ inline_data: { mime_type: mediaType, data: image } }, { text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0 },
+    }),
+  })
+  if (!res.ok) return { status: res.status, json: null }
+  const data = await res.json()
+  const text = (data?.candidates?.[0]?.content?.parts ?? []).map((p: { text?: string }) => p.text || '').join('')
+  const m = text.match(/\{[\s\S]*\}/)
+  if (!m) return { status: 200, json: null }
+  try {
+    return { status: 200, json: JSON.parse(m[0]) }
+  } catch {
+    return { status: 200, json: null }
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsFor(req.headers.get('origin'))
   const json = (obj: unknown, status = 200): Response =>
@@ -139,32 +164,17 @@ Deno.serve(async (req: Request) => {
   if (used > DAILY_CAP) return json({ error: 'rate_limited' }, 429)
 
   try {
-    const res = await fetch(`${BASE}/${MODEL}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { inline_data: { mime_type: body.mediaType || 'image/jpeg', data: body.image } },
-              { text: prompt },
-            ],
-          },
-        ],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0 },
-      }),
-    })
-    if (!res.ok) {
-      const kind = res.status === 400 || res.status === 403 ? 'badKey' : 'upstream'
-      return json({ error: kind }, 502)
+    const mediaType = body.mediaType || 'image/jpeg'
+    let fallback: any | null = null
+    for (const model of MODELS) {
+      const r = await callGemini(model, body.image, mediaType, prompt)
+      if (r.status === 400 || r.status === 403) return json({ error: 'badKey' }, 502)
+      if (r.json?.found === true) return json(r.json) // a bet was read — done
+      if (r.json && fallback == null) fallback = r.json // keep a found:false in case both fail
     }
-    const data = await res.json()
-    const text = (data?.candidates?.[0]?.content?.parts ?? [])
-      .map((p: { text?: string }) => p.text || '')
-      .join('')
-    const m = text.match(/\{[\s\S]*\}/)
-    if (!m) return json({ error: 'parse' }, 502)
-    return json(JSON.parse(m[0]))
+    // Neither model found a bet — return the (found:false) result if we got one.
+    if (fallback) return json(fallback)
+    return json({ error: 'parse' }, 502)
   } catch {
     return json({ error: 'upstream' }, 502)
   }
